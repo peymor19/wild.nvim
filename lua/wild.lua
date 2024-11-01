@@ -1,6 +1,6 @@
 
 local function main()
-  print("Hello from our plugin")
+  --print("Hello from our plugin")
 end
 
 local function setup()
