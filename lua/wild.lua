@@ -1,14 +1,12 @@
 local ui = require("ui")
 local fzy = require("fzy")
 
-local config = {
+local Wild = {
     binds = {
         next_key = "<Tab>",
         previous_key = "<S-Tab>",
     }
 }
-
-local Wild = {state = state, config = config}
 
 local function get_commands()
     local data = {}
@@ -62,8 +60,8 @@ function Wild:setup()
 
     vim.api.nvim_create_user_command("WildNext", function() ui:highlight_next_line(buf_id, win_id) end, {desc = "Next Command" })
     vim.api.nvim_create_user_command("WildPrevious", function() ui:highlight_previous_line(buf_id, win_id) end, {desc = "Previous Command" })
-    vim.api.nvim_set_keymap('c', self.config.binds.next_key, "<Cmd>WildNext<CR>", { noremap = true })
-    vim.api.nvim_set_keymap('c', self.config.binds.previous_key, "<Cmd>WildPrevious<CR>", { noremap = true })
+    vim.api.nvim_set_keymap('c', self.binds.next_key, "<Cmd>WildNext<CR>", { noremap = true })
+    vim.api.nvim_set_keymap('c', self.binds.previous_key, "<Cmd>WildPrevious<CR>", { noremap = true })
 end
 
 return Wild
