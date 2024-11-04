@@ -53,8 +53,10 @@ function Wild:setup()
 
     vim.api.nvim_create_autocmd("VimResized", {
         callback = function()
-            ui.resize_window(win_id)
-            ui.redraw()
+            vim.defer_fn(function()
+                ui.resize_window(win_id)
+                ui.redraw()
+            end, 100)
         end
     })
 

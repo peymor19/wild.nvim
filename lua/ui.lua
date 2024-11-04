@@ -8,17 +8,19 @@ local WildUi = {
 
 WildUi.__index = WildUi
 
-local function create_window_config(buf_data)
+local function create_window_config(buf_line_count)
     local ui = vim.api.nvim_list_uis()[1]
     local col = 0
     local row = 0
     local max_height = 10
 
-    local height = math.max(math.min(#buf_data, max_height), 1)
+    local height = math.max(math.min(buf_line_count, max_height), 1)
 
     if ui ~= nil then
         row = math.max(ui.height - height, 0)
     end
+
+    --print(ui.height - height)
 
     return {
         relative = "editor",
@@ -35,7 +37,7 @@ end
 
 function WildUi.create_window(buf_data)
     buf_id = vim.api.nvim_create_buf(false, true)
-    config = create_window_config(buf_data)
+    config = create_window_config(#buf_data)
 
     win_id = vim.api.nvim_open_win(buf_id, false, config)
 
@@ -58,7 +60,8 @@ end
 
 function WildUi.resize_window(win_id)
     if win_id and vim.api.nvim_win_is_valid(win_id) then
-        local config = create_window_config()
+        local buf_line_count = vim.api.nvim_buf_line_count(buf_id)
+        local config = create_window_config(buf_line_count)
         vim.api.nvim_win_set_config(win_id, config)
     end
 end
@@ -75,7 +78,7 @@ function WildUi:update_buffer_contents(buf_id, data)
     vim.api.nvim_buf_clear_namespace(buf_id, -1, 0, -1)
 
     if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
-        local config = create_window_config(data)
+        local config = create_window_config(#data)
         vim.api.nvim_win_set_config(win_id, config)
 
         if #data == 0 then
