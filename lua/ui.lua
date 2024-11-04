@@ -20,8 +20,6 @@ local function create_window_config(buf_line_count)
         row = math.max(ui.height - height, 0)
     end
 
-    --print(ui.height - height)
-
     return {
         relative = "editor",
         width = 30,
