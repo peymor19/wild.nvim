@@ -10,15 +10,12 @@ WildUi.__index = WildUi
 
 local function create_window_config()
     local ui = vim.api.nvim_list_uis()[1]
-    local col = 12
+    local col = 0
     local row = 0
 
     if ui ~= nil then
-        col = math.max(ui.width - 13, 0)
-        row = math.max(ui.height - 13, 0)
+        row = math.max(ui.height - 14, 0)
     end
-
-    print("row: ", row, "col: ", col)
 
     return {
         relative = "editor",
@@ -28,8 +25,8 @@ local function create_window_config()
         row = row,
         style = "minimal",
         border = "rounded",
-        zindex = 1000,
-        hide = true
+        zindex = 50,
+        hide = false
     }
 end
 
@@ -43,32 +40,27 @@ function WildUi.create_window(buf_data)
     return buf_id, win_id
 end
 
-function WildUi.hide_window(win_id)
+function WildUi.close_window(win_id, buf_id)
     if win_id and vim.api.nvim_win_is_valid(win_id) then
-        vim.api.nvim_win_set_config(win_id, { hide = true })
-        WildUi:reset_highlight()
+        vim.api.nvim_win_close(win_id, true)
     end
-end
 
-function WildUi.show_window(win_id)
-    if win_id and vim.api.nvim_win_is_valid(win_id) then
-        vim.api.nvim_win_set_config(win_id, { hide = false })
+    if buf_id and vim.api.nvim_win_is_valid(buf_id) then
+        vim.api.nvim_buf_delete(buf_id, { force = true })
     end
+
+    WildUi:reset_highlight()
 end
 
 function WildUi.resize_window(win_id)
     if win_id and vim.api.nvim_win_is_valid(win_id) then
-        --local config = create_window_config()
-        --vim.api.nvim_win_set_config(win_id, config)
-        --WildUi.redraw_window(win_id)
+        local config = create_window_config()
+        vim.api.nvim_win_set_config(win_id, config)
     end
 end
 
-function WildUi.redraw_window(win_id)
-    vim.api.nvim_win_call(win_id, function()
-        --vim.cmd([[redraw!]]) -- I don't think I need to redraw everything just my window
-        vim.cmd([[redraw]])
-    end)
+function WildUi.redraw()
+    vim.cmd([[redraw]])
 end
 
 function WildUi:update_buffer_contents(buf_id, data)
@@ -79,6 +71,8 @@ function WildUi:update_buffer_contents(buf_id, data)
     vim.api.nvim_buf_clear_namespace(buf_id, -1, 0, -1)
 
     if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
+        local config = create_window_config()
+        vim.api.nvim_win_set_config(win_id, config)
         vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, data)
     end
 end
@@ -88,7 +82,7 @@ function WildUi:highlight_line(buf_id, win_id)
 
     vim.api.nvim_buf_add_highlight(buf_id, self.highlighter.namespace, "Visual", self.highlighter.current_line, 0, 30)
 
-    WildUi.redraw_window(win_id)
+    WildUi.redraw()
 end
 
 function WildUi:set_command_line(buf_id, line_number)
@@ -108,6 +102,10 @@ function WildUi:highlight_next_line(buf_id, win_id)
         self.highlighter.current_line = 0
     end
 
+    if self.highlighter.current_line >= 0 then
+        vim.api.nvim_win_set_cursor(win_id, {self.highlighter.current_line + 1, 0})
+    end
+
     WildUi:highlight_line(buf_id, win_id)
     WildUi:set_command_line(buf_id, self.highlighter.current_line)
 end
@@ -118,6 +116,10 @@ function WildUi:highlight_previous_line(buf_id, win_id)
 
     if self.highlighter.current_line < 0 then
         self.highlighter.current_line = total_lines - 1
+    end
+
+    if self.highlighter.current_line >= 0 then
+        vim.api.nvim_win_set_cursor(win_id, {self.highlighter.current_line + 1, 0})
     end
 
     WildUi:highlight_line(buf_id, win_id)
