@@ -8,16 +8,14 @@ local Wild = {
     }
 }
 
-local function get_commands()
-    local data = {}
+local commands = {}
 
+local function get_commands()
     for _, name in pairs(vim.fn.getcompletion("", "cmdline")) do
         if not string.match(name, "[~!?#&<>@=]") then
-            table.insert(data, name)
+            table.insert(commands, name)
         end
     end
-
-    return data
 end
 
 function Wild:setup()
@@ -25,7 +23,7 @@ function Wild:setup()
 
     vim.api.nvim_create_autocmd('VimEnter', {
         callback = function()
-            commands = get_commands()
+            get_commands()
         end, group = group })
 
     vim.api.nvim_create_autocmd("CmdlineEnter", {

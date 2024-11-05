@@ -1,14 +1,24 @@
 local WildUi = {
     win_id = nil,
     buf_id = nil,
+    buffer_locked = false,
+    win_config = {
+        relative = "editor",
+        border = "rounded",
+        style = "minimal",
+        width = 30,
+        height = nil,
+        col = nil,
+        row = nil,
+        zindex = 50
+    },
     highlighter = {
         current_line = -1,
         namespace = vim.api.nvim_create_namespace("Highlighter")
-    },
-    buffer_locked = false
+    }
 }
 
-local function create_window_config(buf_line_count)
+function WildUi:create_window_config(buf_line_count)
     local ui = vim.api.nvim_list_uis()[1]
     local col = 0
     local row = 0
@@ -20,24 +30,16 @@ local function create_window_config(buf_line_count)
         row = math.max(ui.height - height, 0)
     end
 
-    return {
-        relative = "editor",
-        width = 30,
-        height = height,
-        col = col,
-        row = row,
-        style = "minimal",
-        border = "rounded",
-        zindex = 50,
-        hide = false
-    }
+    self.win_config.height = height
+    self.win_config.col = col
+    self.win_config.row = row
 end
 
 function WildUi:create_window(buf_data)
-    config = create_window_config(#buf_data)
+    WildUi:create_window_config(#buf_data)
 
     self.buf_id = vim.api.nvim_create_buf(false, true)
-    self.win_id = vim.api.nvim_open_win(self.buf_id, false, config)
+    self.win_id = vim.api.nvim_open_win(self.buf_id, false, self.win_config)
 
     vim.api.nvim_buf_set_lines(self.buf_id, 0, -1, false, buf_data)
 end
@@ -57,8 +59,8 @@ end
 function WildUi:resize_window()
     if self.win_id and vim.api.nvim_win_is_valid(self.win_id) then
         local buf_line_count = vim.api.nvim_buf_line_count(self.buf_id)
-        local config = create_window_config(buf_line_count)
-        vim.api.nvim_win_set_config(self.win_id, config)
+        WildUi:create_window_config(buf_line_count)
+        vim.api.nvim_win_set_config(self.win_id, self.win_config)
     end
 end
 
@@ -72,8 +74,8 @@ function WildUi:update_buffer_contents(data)
     vim.api.nvim_buf_clear_namespace(self.buf_id, -1, 0, -1)
 
     if self.buf_id and vim.api.nvim_buf_is_valid(self.buf_id) then
-        local config = create_window_config(#data)
-        vim.api.nvim_win_set_config(self.win_id, config)
+        WildUi:create_window_config(#data)
+        vim.api.nvim_win_set_config(self.win_id, self.win_config)
 
         if #data == 0 then data = { "No Results" } end
 
