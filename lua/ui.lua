@@ -4,14 +4,15 @@ local WildUi = {
     buffer_locked = false,
     win_config = {
         relative = "editor",
-        border = "rounded",
+        --border = "rounded",
+        border = "none",
         --borderchars = { "─", "│", " ", "│", "╭", "╮", "│", "│" },
         style = "minimal",
         width = 30,
         height = nil,
         col = nil,
         row = nil,
-        zindex = 50
+        zindex = 250
     },
     window = {
         opacity = 15
