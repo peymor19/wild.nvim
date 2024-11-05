@@ -5,7 +5,7 @@ local WildUi = {
         current_line = -1,
         namespace = vim.api.nvim_create_namespace("Highlighter")
     },
-    update_buffer = true
+    buffer_locked = false
 }
 
 local function create_window_config(buf_line_count)
@@ -67,7 +67,7 @@ function WildUi.redraw()
 end
 
 function WildUi:update_buffer_contents(data)
-    if not self.update_buffer then return end
+    if self.buffer_locked then return end
 
     vim.api.nvim_buf_clear_namespace(self.buf_id, -1, 0, -1)
 
@@ -81,21 +81,21 @@ function WildUi:update_buffer_contents(data)
     end
 end
 
+function WildUi:set_command_line(line_number)
+    self.buffer_locked = true
+
+    command = vim.api.nvim_buf_get_lines(self.buf_id, line_number, line_number + 1, false)[1]
+    vim.fn.setcmdline(command)
+
+    self.buffer_locked = false
+end
+
 function WildUi:highlight_line()
     vim.api.nvim_buf_clear_namespace(self.buf_id, self.highlighter.namespace, 0, -1)
 
     vim.api.nvim_buf_add_highlight(self.buf_id, self.highlighter.namespace, "Visual", self.highlighter.current_line, 0, 30)
 
     WildUi.redraw()
-end
-
-function WildUi:set_command_line(line_number)
-    self.update_buffer = false
-
-    command = vim.api.nvim_buf_get_lines(self.buf_id, line_number, line_number + 1, false)[1]
-    vim.fn.setcmdline(command)
-
-    self.update_buffer = true
 end
 
 function WildUi:highlight_next_line()
