@@ -12,11 +12,9 @@ local function get_commands()
     local data = {}
 
     for _, name in pairs(vim.fn.getcompletion("", "cmdline")) do
-        table.insert(data, name)
-    end
-
-    for name, _ in pairs(vim.api.nvim_get_commands({})) do
-        table.insert(data, name)
+        if not string.match(name, "[!?#&<>@=]") then
+            table.insert(data, name)
+        end
     end
 
     return data
@@ -25,16 +23,18 @@ end
 function Wild:setup()
     local group = vim.api.nvim_create_augroup("wild", { clear = true })
 
-    vim.api.nvim_create_autocmd('VimEnter', { callback = function()
-        commands = get_commands()
-    end, group = group })
+    vim.api.nvim_create_autocmd('VimEnter', {
+        callback = function()
+            commands = get_commands()
+        end, group = group })
 
-    vim.api.nvim_create_autocmd("CmdlineEnter", { callback = function()
-        if vim.fn.getcmdtype() == ":" then
-            buf_id, win_id = ui.create_window(commands)
-            ui.redraw()
-        end
-    end, group = group })
+    vim.api.nvim_create_autocmd("CmdlineEnter", {
+        callback = function()
+            if vim.fn.getcmdtype() == ":" then
+                buf_id, win_id = ui.create_window(commands)
+                ui.redraw()
+            end
+        end, group = group })
 
     vim.api.nvim_create_autocmd("CmdlineLeave", {
         callback = function()
@@ -51,7 +51,7 @@ function Wild:setup()
                 ui:update_buffer_contents(buf_id, matches)
                 ui.redraw()
             end
-        end, group = group})
+        end, group = group })
 
     vim.api.nvim_create_autocmd("VimResized", {
         callback = function()
@@ -59,8 +59,7 @@ function Wild:setup()
                 ui.resize_window(win_id)
                 ui.redraw()
             end, 100)
-        end
-    })
+        end, group = group })
 
     vim.api.nvim_create_user_command("WildNext", function() ui:highlight_next_line(buf_id, win_id) end, {desc = "Next Command" })
     vim.api.nvim_create_user_command("WildPrevious", function() ui:highlight_previous_line(buf_id, win_id) end, {desc = "Previous Command" })
