@@ -4,8 +4,7 @@ local WildUi = {
     buffer_locked = false,
     win_config = {
         relative = "editor",
-        --border = "rounded",
-        border = "none",
+        border = "rounded",
         --borderchars = { "─", "│", " ", "│", "╭", "╮", "│", "│" },
         style = "minimal",
         width = 30,
@@ -32,7 +31,7 @@ function WildUi:create_window_config(buf_line_count)
     local height = math.max(math.min(buf_line_count, max_height), 1)
 
     if ui ~= nil then
-        row = math.max(ui.height - height, 0)
+        row = math.max(ui.height - height - 4, 0)
     end
 
     self.win_config.height = height
