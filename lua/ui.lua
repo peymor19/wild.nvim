@@ -5,12 +5,16 @@ local WildUi = {
     win_config = {
         relative = "editor",
         border = "rounded",
+        --borderchars = { "─", "│", " ", "│", "╭", "╮", "│", "│" },
         style = "minimal",
         width = 30,
         height = nil,
         col = nil,
         row = nil,
         zindex = 50
+    },
+    window = {
+        opacity = 15
     },
     highlighter = {
         current_line = -1,
@@ -40,6 +44,8 @@ function WildUi:create_window(buf_data)
 
     self.buf_id = vim.api.nvim_create_buf(false, true)
     self.win_id = vim.api.nvim_open_win(self.buf_id, false, self.win_config)
+
+    vim.api.nvim_set_option_value("winblend", self.window.opacity, { win = self.win_id, scope = "local" })
 
     vim.api.nvim_buf_set_lines(self.buf_id, 0, -1, false, buf_data)
 end
