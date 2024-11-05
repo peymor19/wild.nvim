@@ -23,9 +23,11 @@ local function get_commands()
 end
 
 function Wild:setup()
-    commands = get_commands()
-
     local group = vim.api.nvim_create_augroup("wild", { clear = true })
+
+    vim.api.nvim_create_autocmd('VimEnter', { callback = function()
+        commands = get_commands()
+    end, group = group })
 
     vim.api.nvim_create_autocmd("CmdlineEnter", { callback = function()
         if vim.fn.getcmdtype() == ":" then
