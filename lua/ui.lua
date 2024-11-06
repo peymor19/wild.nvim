@@ -2,6 +2,7 @@ local WildUi = {
     win_id = nil,
     buf_id = nil,
     buffer_locked = false,
+    is_results = false,
     win_config = {
         relative = "editor",
         border = "rounded",
@@ -79,11 +80,16 @@ function WildUi:update_buffer_contents(data)
 
     vim.api.nvim_buf_clear_namespace(self.buf_id, -1, 0, -1)
 
+    if #data == 0 then
+        self.is_results = false
+        data = { "No Results" }
+    else
+        self.is_results = true
+    end
+
     if self.buf_id and vim.api.nvim_buf_is_valid(self.buf_id) then
         WildUi:create_window_config(#data)
         vim.api.nvim_win_set_config(self.win_id, self.win_config)
-
-        if #data == 0 then data = { "No Results" } end
 
         vim.api.nvim_buf_set_lines(self.buf_id, 0, -1, false, data)
     end
@@ -107,6 +113,8 @@ function WildUi:highlight_line()
 end
 
 function WildUi:highlight_next_line()
+    if not self.is_results then return end
+
     local total_lines = vim.api.nvim_buf_line_count(self.buf_id)
     self.highlighter.current_line = self.highlighter.current_line + 1
 
@@ -123,6 +131,8 @@ function WildUi:highlight_next_line()
 end
 
 function WildUi:highlight_previous_line()
+    if not self.is_results then return end
+
     local total_lines = vim.api.nvim_buf_line_count(self.buf_id)
     self.highlighter.current_line = self.highlighter.current_line - 1
 

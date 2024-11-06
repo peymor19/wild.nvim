@@ -23,7 +23,9 @@ function Wild:setup()
 
     vim.api.nvim_create_autocmd('VimEnter', {
         callback = function()
-            get_commands()
+            vim.defer_fn(function()
+                get_commands()
+            end, 100)
         end, group = group })
 
     vim.api.nvim_create_autocmd("CmdlineEnter", {
