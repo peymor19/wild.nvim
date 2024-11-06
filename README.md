@@ -22,9 +22,13 @@ return {
     }
 ```
 
-### setup structure
+### Setup structure
 
 ```lua
 local wild = require('wild')
 wild:setup()
 ```
+
+## Contributing
+
+Contributions are welcome! Please submit an issue or a pull request with any improvements, bug reports, or new feature ideas.
