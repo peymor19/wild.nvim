@@ -1,5 +1,6 @@
 local ui = require("ui")
 local fzy = require("fzy")
+local cmd = require("cmd")
 
 local Wild = {
     binds = {
@@ -8,23 +9,14 @@ local Wild = {
     }
 }
 
-local commands = {}
-
-local function get_commands()
-    for _, name in pairs(vim.fn.getcompletion("", "cmdline")) do
-        if not string.match(name, "[~!?#&<>@=]") then
-            table.insert(commands, name)
-        end
-    end
-end
-
 function Wild:setup()
     local group = vim.api.nvim_create_augroup("wild", { clear = true })
 
     vim.api.nvim_create_autocmd('VimEnter', {
         callback = function()
             vim.defer_fn(function()
-                get_commands()
+                commands = cmd.get_commands()
+                help_tags = cmd.get_help_tags()
             end, 100)
         end, group = group })
 
@@ -46,7 +38,11 @@ function Wild:setup()
             if vim.fn.getcmdtype() == ":" then
                 local input = vim.fn.getcmdline()
 
-                matches = fzy.find_matches(input, commands)
+                if cmd.is_help(input) then
+                    matches = fzy.find_matches(cmd.suffix(input), help_tags)
+                else
+                  matches = fzy.find_matches(input, commands)
+                end
 
                 ui:update_buffer_contents(matches)
                 ui.redraw()

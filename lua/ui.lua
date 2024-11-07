@@ -1,3 +1,5 @@
+local cmd = require("cmd")
+
 local WildUi = {
     win_id = nil,
     buf_id = nil,
@@ -98,8 +100,14 @@ end
 function WildUi:set_command_line(line_number)
     self.buffer_locked = true
 
-    command = vim.api.nvim_buf_get_lines(self.buf_id, line_number, line_number + 1, false)[1]
-    vim.fn.setcmdline(command)
+    local command = vim.api.nvim_buf_get_lines(self.buf_id, line_number, line_number + 1, false)[1]
+    local input = vim.fn.getcmdline()
+
+    if cmd.is_help(input) then
+        vim.fn.setcmdline("help "..command)
+    else
+        vim.fn.setcmdline(command)
+    end
 
     self.buffer_locked = false
 end
