@@ -43,6 +43,7 @@ function WildUi:create_window_config(buf_line_count)
 end
 
 function WildUi:create_window(buf_data)
+    buf_data = cmd.commands
     WildUi:create_window_config(#buf_data)
 
     self.buf_id = vim.api.nvim_create_buf(false, true)
