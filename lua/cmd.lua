@@ -83,7 +83,7 @@ function Cmd:set_most_recent_at_top()
 end
 
 function Cmd:to_file()
-    if not self.cmd_history > 0 then return
+    if not self.cmd_history > 0 then return end
 
     local file = io.open(vim.fn.stdpath('data') .. '/command_history.json', 'w')
     if file then
