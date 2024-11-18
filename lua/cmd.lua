@@ -11,6 +11,9 @@ function Cmd:get_commands()
             table.insert(self.commands, name)
         end
     end
+
+    Cmd:from_file()
+    Cmd:set_most_recent_at_top()
 end
 
 function Cmd:get_help_tags()
@@ -37,64 +40,65 @@ function Cmd:get_help_tags()
     end
 end
 
-function Cmd:match(input)
+function Cmd:is_valid(input)
     for _, cmd in ipairs(self.commands) do
         if string.match(cmd, input) and input ~= "" then
-            return input
+            return true
         end
     end
 
-    return nil
+    return false
+end
+
+function Cmd:inc_usage(command)
+    for _, item in ipairs(self.cmd_history) do
+        if item.cmd == command then
+            item.count = item.count + 1
+            return
+        end
+    end
+
+    table.insert(self.cmd_history, {cmd = command, count = 1})
 end
 
 function Cmd:sort_history()
-    local sorted= {}
-
-    for cmd, count in pairs(self.cmd_history) do
-        table.insert(sorted, {cmd = cmd, count = count})
-    end
-
-    table.sort(sorted, function(a, b)
+    table.sort(self.cmd_history, function(a, b)
         return a.count > b.count
     end)
-
-    local pruned= {}
-    for i = 1, math.min(#sorted, self.max_cmd_history) do
-        pruned[sorted[i].cmd] = sorted[i].count
-    end
-
-    self.cmd_history = pruned
 end
 
 function Cmd:set_history()
     local command = vim.fn.getcmdline()
 
-    if not Cmd:match(command) then return end
-
-    if self.cmd_history[command] then
-        self.cmd_history[command] = self.cmd_history[command] + 1
-    else
-        self.cmd_history[command] = 1
+    if Cmd:is_valid(command) then
+        Cmd:inc_usage(command)
+        Cmd:sort_history()
     end
+end
 
-    Cmd:sort_history()
+function Cmd:set_most_recent_at_top()
+    for i = math.min(self.max_cmd_history, #self.cmd_history), 1, -1 do
+        table.insert(self.commands, 1, self.cmd_history[i].cmd)
+    end
 end
 
 function Cmd:to_file()
-  local file = io.open(vim.fn.stdpath('data') .. '/command_history.json', 'w')
-  if file then
-    file:write(vim.json.encode(self.cmd_history))
-    file:close()
-  end
+    if not self.cmd_history > 0 then return
+
+    local file = io.open(vim.fn.stdpath('data') .. '/command_history.json', 'w')
+    if file then
+        file:write(vim.json.encode(self.cmd_history))
+        file:close()
+    end
 end
 
 function Cmd:from_file()
-  local file = io.open(vim.fn.stdpath('data') .. '/command_history.json', 'r')
-  if file then
-    local data = file:read('*all')
-    self.cmd_history = vim.json.decode(data) or {}
-    file:close()
-  end
+    local file = io.open(vim.fn.stdpath('data') .. '/command_history.json', 'r')
+    if file then
+        local data = file:read('*all')
+        self.cmd_history = vim.json.decode(data) or {}
+        file:close()
+    end
 end
 
 function Cmd.is_help(input)
