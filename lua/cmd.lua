@@ -61,10 +61,12 @@ function Cmd:inc_usage(command)
     table.insert(self.cmd_history, {cmd = command, count = 1})
 end
 
-function Cmd:sort_history()
-    table.sort(self.cmd_history, function(a, b)
+function Cmd.sort_history(cmd_history)
+    table.sort(cmd_history, function(a, b)
         return a.count > b.count
     end)
+
+    return cmd_history
 end
 
 function Cmd:set_history()
@@ -72,7 +74,7 @@ function Cmd:set_history()
 
     if Cmd:is_valid(command) then
         Cmd:inc_usage(command)
-        Cmd:sort_history()
+        self.cmd_history = Cmd.sort_history(self.cmd_history)
     end
 end
 
@@ -83,7 +85,7 @@ function Cmd:set_most_recent_at_top()
 end
 
 function Cmd:to_file()
-    if not self.cmd_history > 0 then return end
+    if #self.cmd_history == 0 then return end
 
     local file = io.open(vim.fn.stdpath('data') .. '/command_history.json', 'w')
     if file then
