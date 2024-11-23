@@ -15,7 +15,7 @@ function Wild:setup()
     vim.api.nvim_create_autocmd('VimEnter', {
         callback = function()
             vim.defer_fn(function()
-                cmd:get_commands()
+                cmd.commands = cmd.get_commands()
                 cmd:get_help_tags()
             end, 100)
         end, group = group })
@@ -66,6 +66,8 @@ function Wild:setup()
     vim.api.nvim_create_user_command("WildPrevious", function() ui:highlight_previous_line() end, {desc = "Previous Command" })
     vim.api.nvim_set_keymap('c', self.binds.next_key, "<Cmd>WildNext<CR>", { noremap = true })
     vim.api.nvim_set_keymap('c', self.binds.previous_key, "<Cmd>WildPrevious<CR>", { noremap = true })
+
+    -- vim.api.nvim_create_user_command("WildResetHistory", function() cmd:resethistory() end, {desc = "Resets command history" })
 
     -- disables builtin neovim command history
     vim.api.nvim_set_keymap('c', '<C-f>', '<Nop>', { noremap = true, silent = true })

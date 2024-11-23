@@ -8,7 +8,7 @@ WildFzy.__index = WildFzy
 function WildFzy.find_matches(needle)
     if cmd.is_help(needle) then
         haystack = cmd.help_tags
-        needle = cmd.suffix(needle)
+        needle = cmd.tail(needle)
     else
         haystack = cmd.commands
     end

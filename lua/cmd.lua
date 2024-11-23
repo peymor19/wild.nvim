@@ -5,15 +5,20 @@ local Cmd = {
     max_cmd_history = 15
 }
 
-function Cmd:get_commands()
+function Cmd.get_commands()
+    commands = {}
+
     for _, name in pairs(vim.fn.getcompletion("", "cmdline")) do
         if not string.match(name, "[~!?#&<>@=]") then
-            table.insert(self.commands, name)
+            table.insert(commands, name)
         end
     end
 
     Cmd:from_file()
-    Cmd:set_most_recent_at_top()
+
+    commands = Cmd:set_most_recent_at_top(commands)
+
+    return commands
 end
 
 function Cmd:get_help_tags()
@@ -40,8 +45,8 @@ function Cmd:get_help_tags()
     end
 end
 
-function Cmd:is_valid(input)
-    for _, cmd in ipairs(self.commands) do
+function Cmd.is_valid(input, commands)
+    for _, cmd in ipairs(commands) do
         if string.match(cmd, input) and input ~= "" then
             return true
         end
@@ -50,15 +55,17 @@ function Cmd:is_valid(input)
     return false
 end
 
-function Cmd:inc_usage(command)
-    for _, item in ipairs(self.cmd_history) do
+function Cmd.inc_usage(command, cmd_history)
+    for _, item in ipairs(cmd_history) do
         if item.cmd == command then
             item.count = item.count + 1
-            return
+            return cmd_history
         end
     end
 
-    table.insert(self.cmd_history, {cmd = command, count = 1})
+    table.insert(cmd_history, {cmd = command, count = 1})
+
+    return cmd_history
 end
 
 function Cmd.sort_history(cmd_history)
@@ -72,16 +79,18 @@ end
 function Cmd:set_history()
     local command = vim.fn.getcmdline()
 
-    if Cmd:is_valid(command) then
-        Cmd:inc_usage(command)
+    if Cmd.is_valid(command, self.commands) then
+        self.cmd_history = Cmd.inc_usage(command, self.cmd_history)
         self.cmd_history = Cmd.sort_history(self.cmd_history)
     end
 end
 
-function Cmd:set_most_recent_at_top()
+function Cmd:set_most_recent_at_top(commands)
     for i = math.min(self.max_cmd_history, #self.cmd_history), 1, -1 do
-        table.insert(self.commands, 1, self.cmd_history[i].cmd)
+        table.insert(commands, 1, self.cmd_history[i].cmd)
     end
+
+    return commands
 end
 
 function Cmd:to_file()
@@ -115,7 +124,7 @@ function Cmd.is_help(input)
     return false
 end
 
-function Cmd.suffix(command)
+function Cmd.tail(command)
   local space_pos = command:find(" ")
 
   if space_pos then
