@@ -1,4 +1,4 @@
 .PHONY: test
 
 test:
-	nvim --headless -c "set rtp+=../plenary.nvim" -c "PlenaryBustedDirectory lua/tests/"
+	nvim --headless --noplugin -u scripts/wild_test_init.vim -c "PlenaryBustedDirectory lua/tests/"
