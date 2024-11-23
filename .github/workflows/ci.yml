@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ubuntu-22.04
+        os: [ubuntu-22.04]
         include:
           - os: ubuntu-22.04
             install-rg: sudo apt-get update && sudo apt-get install -y ripgrep
