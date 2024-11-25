@@ -107,13 +107,17 @@ end
 
 function Cmd.from_file()
     local file = io.open(vim.fn.stdpath('data') .. '/command_history.json', 'r')
+    local data = ""
 
     if file then
-        local data = file:read('*all')
-        commands = vim.json.decode(data) or {}
+        data = file:read('*all')
         file:close()
-    else
-        commands = {}
+    end
+
+    local ok, commands = pcall(vim.json.decode, data)
+
+    if not ok then
+        return {}
     end
 
     return commands
