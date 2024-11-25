@@ -3,9 +3,11 @@ local fzy = require("fzy")
 local cmd = require("cmd")
 
 local Autocmd = { searchables = {} }
+local file_path = vim.fn.stdpath('data') .. '/command_history.json'
 
 function Autocmd.on_vim_enter()
-    searchables = cmd.get_searchables()
+    commands_from_file = cmd.from_file(file_path)
+    searchables = cmd.get_searchables(commands_from_file)
     --cmd:get_help_tags()
     return searchables
 end
@@ -23,7 +25,7 @@ function Autocmd.on_cmdline_leave(searchables)
         local command = vim.fn.getcmdline()
         searchables.commands = cmd.inc_command(command, searchables.commands)
 
-        cmd.to_file(searchables.commands)
+        cmd.to_file(file_path, searchables.commands)
         ui:close_window()
     end
 

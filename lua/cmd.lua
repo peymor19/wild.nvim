@@ -2,12 +2,11 @@ local Cmd = {
     help_tags = {}
 }
 
-function Cmd.get_searchables()
+function Cmd.get_searchables(commands_from_file)
     vim_commands = Cmd.get_vim_commands()
-    most_used_commands = Cmd.from_file()
 
     local command_usage = {}
-    for _, item in ipairs(most_used_commands) do
+    for _, item in ipairs(commands_from_file) do
         command_usage[item.cmd] = item.count
     end
 
@@ -95,18 +94,18 @@ function Cmd.sort_by_usage(commands)
     return commands
 end
 
-function Cmd.to_file(commands)
+function Cmd.to_file(file_path, commands)
     if #commands == 0 then return end
 
-    local file = io.open(vim.fn.stdpath('data') .. '/command_history.json', 'w')
+    local file = io.open(file_path, 'w')
     if file then
         file:write(vim.json.encode(commands))
         file:close()
     end
 end
 
-function Cmd.from_file()
-    local file = io.open(vim.fn.stdpath('data') .. '/command_history.json', 'r')
+function Cmd.from_file(file_path)
+    local file = io.open(file_path, 'r')
     local data = ""
 
     if file then
