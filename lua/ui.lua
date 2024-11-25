@@ -25,6 +25,17 @@ local WildUi = {
     }
 }
 
+function WildUi.get_buf_data(type, searchables)
+    if type == "help" then
+    else
+        buf_data = vim.tbl_map(function(item)
+            return item.cmd
+        end, searchables["commands"])
+    end
+
+    return buf_data
+end
+
 function WildUi:create_window_config(buf_line_count)
     local ui = vim.api.nvim_list_uis()[1]
     local col = 0
@@ -43,7 +54,6 @@ function WildUi:create_window_config(buf_line_count)
 end
 
 function WildUi:create_window(buf_data)
-    buf_data = cmd.commands
     WildUi:create_window_config(#buf_data)
 
     self.buf_id = vim.api.nvim_create_buf(false, true)

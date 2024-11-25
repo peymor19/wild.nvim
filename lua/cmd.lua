@@ -1,11 +1,29 @@
 local Cmd = {
-    commands = {},
-    help_tags = {},
-    cmd_history = {},
-    max_cmd_history = 15
+    help_tags = {}
 }
 
-function Cmd.get_commands()
+function Cmd.get_searchables()
+    vim_commands = Cmd.get_vim_commands()
+    most_used_commands = Cmd.from_file()
+
+    local command_usage = {}
+    for _, item in ipairs(most_used_commands) do
+        command_usage[item.cmd] = item.count
+    end
+
+    local commands_with_count = {}
+    for _, cmd in ipairs(vim_commands) do
+        table.insert(commands_with_count, {
+            cmd = cmd,
+            count = command_usage[cmd] or 0
+        })
+    end
+
+    commands = Cmd.sort_by_usage(commands_with_count)
+    return { commands = commands }
+end
+
+function Cmd.get_vim_commands()
     commands = {}
 
     for _, name in pairs(vim.fn.getcompletion("", "cmdline")) do
@@ -13,10 +31,6 @@ function Cmd.get_commands()
             table.insert(commands, name)
         end
     end
-
-    Cmd:from_file()
-
-    commands = Cmd:set_most_recent_at_top(commands)
 
     return commands
 end
@@ -45,9 +59,9 @@ function Cmd:get_help_tags()
     end
 end
 
-function Cmd.is_valid(input, commands)
-    for _, cmd in ipairs(commands) do
-        if string.match(cmd, input) and input ~= "" then
+function Cmd.in_list(input, commands)
+    for _, item in ipairs(commands) do
+        if string.match(item.cmd, input) and input ~= "" then
             return true
         end
     end
@@ -55,61 +69,54 @@ function Cmd.is_valid(input, commands)
     return false
 end
 
-function Cmd.inc_usage(command, cmd_history)
-    for _, item in ipairs(cmd_history) do
+function Cmd.inc_command(command, commands)
+    if not Cmd.in_list(command, commands) then return commands end
+
+    for _, item in ipairs(commands) do
         if item.cmd == command then
             item.count = item.count + 1
-            return cmd_history
+            commands = Cmd.sort_by_usage(commands)
+            return commands
         end
     end
 
-    table.insert(cmd_history, {cmd = command, count = 1})
+    table.insert(commands, {cmd = command, count = 1})
 
-    return cmd_history
-end
-
-function Cmd.sort_history(cmd_history)
-    table.sort(cmd_history, function(a, b)
-        return a.count > b.count
-    end)
-
-    return cmd_history
-end
-
-function Cmd:set_history()
-    local command = vim.fn.getcmdline()
-
-    if Cmd.is_valid(command, self.commands) then
-        self.cmd_history = Cmd.inc_usage(command, self.cmd_history)
-        self.cmd_history = Cmd.sort_history(self.cmd_history)
-    end
-end
-
-function Cmd:set_most_recent_at_top(commands)
-    for i = math.min(self.max_cmd_history, #self.cmd_history), 1, -1 do
-        table.insert(commands, 1, self.cmd_history[i].cmd)
-    end
+    commands = Cmd.sort_by_usage(commands)
 
     return commands
 end
 
-function Cmd:to_file()
-    if #self.cmd_history == 0 then return end
+function Cmd.sort_by_usage(commands)
+    table.sort(commands, function(a, b)
+        return a.count > b.count
+    end)
+
+    return commands
+end
+
+function Cmd.to_file(commands)
+    if #commands == 0 then return end
 
     local file = io.open(vim.fn.stdpath('data') .. '/command_history.json', 'w')
     if file then
-        file:write(vim.json.encode(self.cmd_history))
+        file:write(vim.json.encode(commands))
         file:close()
     end
 end
 
-function Cmd:from_file()
+function Cmd.from_file()
     local file = io.open(vim.fn.stdpath('data') .. '/command_history.json', 'r')
+
     if file then
         local data = file:read('*all')
-        self.cmd_history = vim.json.decode(data) or {}
+        commands = vim.json.decode(data) or {}
         file:close()
+    else
+        commands = {}
     end
+
+    return commands
 end
 
 function Cmd.is_help(input)

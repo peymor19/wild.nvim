@@ -5,13 +5,13 @@ local WildFzy = {}
 WildFzy.__index = WildFzy
 
 
-function WildFzy.find_matches(needle)
-    if cmd.is_help(needle) then
-        haystack = cmd.help_tags
-        needle = cmd.tail(needle)
-    else
-        haystack = cmd.commands
-    end
+function WildFzy.find_matches(needle, haystack)
+    --if cmd.is_help(needle) then
+    --    haystack = cmd.help_tags
+    --    needle = cmd.tail(needle)
+    --else
+    --    haystack = cmd.commands
+    --end
 
     needle = needle:lower()
 
