@@ -20,13 +20,13 @@ function WildFzy.find_matches(needle, haystack)
 
     table.sort(scored_haystack, function(a, b) return a[3] > b[3] end)
 
-    local sorted_lines = {}
+    --local sorted_lines = {}
 
-    for _, item in pairs(scored_haystack) do
-        table.insert(sorted_lines, item[1])
-    end
+    --for _, item in pairs(scored_haystack) do
+    --    table.insert(sorted_lines, item[1])
+    --end
 
-    return sorted_lines
+    return scored_haystack
 end
 
 return WildFzy

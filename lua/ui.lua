@@ -104,7 +104,31 @@ function WildUi:update_buffer_contents(data)
         WildUi:create_window_config(#data)
         vim.api.nvim_win_set_config(self.win_id, self.win_config)
 
-        vim.api.nvim_buf_set_lines(self.buf_id, 0, -1, false, data)
+        local command_string = {}
+        for _, item in ipairs(data) do
+            table.insert(command_string, item[1]) -- Extract the strings
+        end
+
+        vim.api.nvim_buf_set_lines(self.buf_id, 0, -1, false, command_string)
+
+        WildUi.highlight_chars(self.buf_id, data, "#ff8800")
+    end
+end
+
+function WildUi.highlight_chars(buf_id, data, color)
+    local ns_id = vim.api.nvim_create_namespace("wild.nvim")
+    vim.api.nvim_set_hl(0, "hlcolor", { fg = color })
+
+    for line_idx, item in ipairs(data) do
+        local str, positions = item[1], item[2]
+        for _, pos in ipairs(positions) do
+            local char = str:sub(pos, pos)
+            vim.api.nvim_buf_set_extmark(buf_id, ns_id, line_idx - 1, pos - 1, {
+                virt_text = { { char, "hlcolor" } },
+                virt_text_pos = "overlay",
+                priority = 0
+            })
+        end
     end
 end
 
