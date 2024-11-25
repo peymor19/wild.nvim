@@ -26,8 +26,9 @@ function Autocmd.on_cmdline_leave(searchables)
         searchables.commands = cmd.inc_command(command, searchables.commands)
 
         cmd.to_file(file_path, searchables.commands)
-        ui:close_window()
     end
+
+    ui:close_window()
 
     return searchables
 end
