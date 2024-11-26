@@ -150,7 +150,14 @@ end
 function WildUi:highlight_line()
     vim.api.nvim_buf_clear_namespace(self.buf_id, self.highlighter.namespace, 0, -1)
 
-    vim.api.nvim_buf_add_highlight(self.buf_id, self.highlighter.namespace, "Visual", self.highlighter.current_line, 0, 30)
+    local line_content = vim.api.nvim_buf_get_lines(self.buf_id, self.highlighter.current_line, self.highlighter.current_line + 1, false)[1]
+
+    vim.api.nvim_buf_set_extmark(self.buf_id, self.highlighter.namespace, self.highlighter.current_line, 0, {
+        virt_text = { { line_content, "Visual" } },
+        virt_text_pos = "overlay",
+        hl_mode = "combine",
+        priority = 100
+    })
 
     WildUi.redraw()
 end
