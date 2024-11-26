@@ -6,6 +6,8 @@ local Autocmd = {}
 
 local file_path = vim.fn.stdpath('data') .. '/command_history.json'
 
+local timer = false
+
 local function get_searchables()
     local commands_from_file = cmd.from_file(file_path)
     return cmd.get_searchables(commands_from_file)
@@ -69,7 +71,9 @@ function Autocmd.init()
     end, group = group })
 
     autocmd("CmdlineEnter", { callback = function()
-        searchables = handle_cmdline_enter(searchables)
+        vim.defer_fn(function()
+            searchables = handle_cmdline_enter(searchables)
+        end, 10)
     end, group = group })
 
     autocmd("CmdlineLeave", { callback = function()
@@ -77,7 +81,9 @@ function Autocmd.init()
     end, group = group })
 
     autocmd("CmdlineChanged", { callback = function()
-        searchables = handle_cmdline_changed(searchables)
+        vim.defer_fn(function()
+            searchables = handle_cmdline_changed(searchables)
+        end, 10)
     end, group = group })
 
     autocmd("VimResized", { callback = function()
