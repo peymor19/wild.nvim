@@ -9,7 +9,7 @@ local Wild = {
 }
 
 function Wild:setup()
-    autocmd:init()
+    autocmd.init()
 
     vim.api.nvim_create_user_command("WildNext", function() ui:highlight_next_line() end, {desc = "Next Command" })
     vim.api.nvim_create_user_command("WildPrevious", function() ui:highlight_previous_line() end, {desc = "Previous Command" })
