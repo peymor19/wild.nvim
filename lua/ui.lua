@@ -95,7 +95,7 @@ function WildUi:update_buffer_contents(data)
 
     if #data == 0 then
         self.is_results = false
-        data = { "No Results" }
+        data = { { "No Results", {}, 0 } }
     else
         self.is_results = true
     end
