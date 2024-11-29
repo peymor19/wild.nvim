@@ -1,6 +1,4 @@
-local Cmd = {
-    help_tags = {}
-}
+local Cmd = {}
 
 function Cmd.get_searchables(commands_from_file)
     vim_commands = Cmd.get_vim_commands()
@@ -18,8 +16,10 @@ function Cmd.get_searchables(commands_from_file)
         })
     end
 
-    commands = Cmd.sort_by_usage(commands_with_count)
-    return { commands = commands }
+    local commands = Cmd.sort_by_usage(commands_with_count)
+
+    local help_tags = Cmd.get_help_tags()
+    return { commands = commands, help_tags = help_tags }
 end
 
 function Cmd.get_vim_commands()
@@ -34,9 +34,10 @@ function Cmd.get_vim_commands()
     return commands
 end
 
-function Cmd:get_help_tags()
-  local runtimepath = vim.o.runtimepath
-  local paths = vim.split(runtimepath, ',')
+function Cmd.get_help_tags()
+    local runtimepath = vim.o.runtimepath
+    local paths = vim.split(runtimepath, ',')
+    local help_tags = {}
 
     for _, path in ipairs(paths) do
         local doc_path = path .. '/doc'
@@ -50,12 +51,14 @@ function Cmd:get_help_tags()
                 for _, line in ipairs(lines) do
                     if not line:match "^!_TAG_" then
                         local fields = vim.split(line, "\t", { trimempty = true })
-                        table.insert(self.help_tags, fields[1])
+                        table.insert(help_tags, {cmd = fields[1]})
                     end
                 end
             end
         end
     end
+
+    return help_tags
 end
 
 function Cmd.in_list(input, commands)
@@ -123,15 +126,28 @@ function Cmd.from_file(file_path)
 end
 
 function Cmd.is_help(input)
-    local valid_prefixes = { "h ", "he ", "hel ", "help " }
+    local valid_prefixes = { "h ", "he ", "hel ", "help "}
+    local is_help = false
 
     for _, prefix in ipairs(valid_prefixes) do
         if string.sub(input, 1, #prefix) == prefix then
-            return true
+            is_help = true
         end
     end
 
-    return false
+    return is_help
+end
+
+function Cmd.searchable_type_from_input(input)
+    local input = vim.fn.getcmdline()
+    local type = "commands"
+
+    if Cmd.is_help(input) then
+        input = Cmd.tail(input)
+        type =  "help_tags"
+    end
+
+    return input, type
 end
 
 function Cmd.tail(command)

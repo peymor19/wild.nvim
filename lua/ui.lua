@@ -26,12 +26,17 @@ local WildUi = {
 }
 
 function WildUi.get_buf_data(type, searchables)
-    if type == "help" then
-    else
-        buf_data = vim.tbl_map(function(item)
-            return item.cmd
-        end, searchables["commands"])
-    end
+    print(vim.inspect(type))
+    buf_data = vim.tbl_map(function(item)
+        return item.cmd
+    end, searchables[type])
+
+    --vim.tbl_map(function(item)
+    --    print(vim.inspect(item.cmd))
+    --    return
+    --end, searchables["help_tags"])
+
+
 
     return buf_data
 end

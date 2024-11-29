@@ -39,8 +39,9 @@ end
 local function handle_cmdline_changed(searchables)
     if vim.fn.getcmdtype() ~= ":" then return searchables end
 
-    local input = vim.fn.getcmdline()
-    local buf_data = ui.get_buf_data("commands", searchables)
+    local input, searchable_type = cmd.searchable_type_from_input(input)
+
+    local buf_data = ui.get_buf_data(searchable_type, searchables)
     local matches = fzy.find_matches(input, buf_data)
 
     ui:update_buffer_contents(matches)
