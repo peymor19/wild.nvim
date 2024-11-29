@@ -3,7 +3,7 @@ local cmd = require("cmd")
 local WildUi = {
     win_id = nil,
     buf_id = nil,
-    buffer_locked = false,
+    skip_update = false,
     is_results = true,
     win_config = {
         relative = "editor",
@@ -89,7 +89,10 @@ function WildUi.redraw()
 end
 
 function WildUi:update_buffer_contents(data)
-    if self.buffer_locked then return end
+    if self.skip_update then
+        self.skip_update = false
+        return
+    end
 
     vim.api.nvim_buf_clear_namespace(self.buf_id, -1, 0, -1)
 
@@ -133,7 +136,7 @@ function WildUi.highlight_chars(buf_id, data, color)
 end
 
 function WildUi:set_command_line(line_number)
-    self.buffer_locked = true
+    self.skip_update = true
 
     local command = vim.api.nvim_buf_get_lines(self.buf_id, line_number, line_number + 1, false)[1]
     local input = vim.fn.getcmdline()
@@ -143,8 +146,6 @@ function WildUi:set_command_line(line_number)
     else
         vim.fn.setcmdline(command)
     end
-
-    self.buffer_locked = false
 end
 
 function WildUi:highlight_line()
