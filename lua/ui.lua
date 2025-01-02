@@ -1,9 +1,8 @@
 local cmd = require("cmd")
 
-local WildUi = {
-    win_id = nil,
-    buf_id = nil,
-    skip_update = false,
+local M = {}
+
+M.config = {
     is_results = true,
     win_config = {
         relative = "editor",
@@ -20,20 +19,20 @@ local WildUi = {
         opacity = 15
     },
     highlighter = {
+        id = nil,
         current_line = -1,
-        namespace = vim.api.nvim_create_namespace("Highlighter")
+        namespace = vim.api.nvim_create_namespace("Highlighter"),
+        char_color = "#ff8800"
     }
 }
 
-function WildUi.get_buf_data(type, searchables)
-    local buf_data = vim.tbl_map(function(item)
+function M.get_buf_data(type, searchables)
+    return vim.tbl_map(function(item)
         return item.cmd
     end, searchables[type])
-
-    return buf_data
 end
 
-function WildUi:create_window_config(buf_line_count)
+function M.set_config(buf_line_count)
     local ui = vim.api.nvim_list_uis()[1]
     local col = 0
     local row = 0
@@ -45,77 +44,74 @@ function WildUi:create_window_config(buf_line_count)
         row = math.max(ui.height - height - 4, 0)
     end
 
-    self.win_config.height = height
-    self.win_config.col = col
-    self.win_config.row = row
+    M.config.win_config.height = height
+    M.config.win_config.col = col
+    M.config.win_config.row = row
 end
 
-function WildUi:create_window(buf_data)
-    WildUi:create_window_config(#buf_data)
+function M.create_window()
+    buf_id = vim.api.nvim_create_buf(false, true)
+    win_id = vim.api.nvim_open_win(buf_id, false, M.config.win_config)
 
-    self.buf_id = vim.api.nvim_create_buf(false, true)
-    self.win_id = vim.api.nvim_open_win(self.buf_id, false, self.win_config)
+    vim.api.nvim_set_option_value("winblend", M.config.window.opacity, { win = win_id, scope = "local" })
 
-    vim.api.nvim_set_option_value("winblend", self.window.opacity, { win = self.win_id, scope = "local" })
-
-    vim.api.nvim_buf_set_lines(self.buf_id, 0, -1, false, buf_data)
+    return win_id, buf_id
 end
 
-function WildUi:close_window()
-    if self.win_id and vim.api.nvim_win_is_valid(self.win_id) then
-        vim.api.nvim_win_close(self.win_id, true)
+function M.set_buffer_contents(buf_id, buf_data)
+    vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, buf_data)
+end
+
+function M.close_window(win_id, buf_id)
+    if win_id and vim.api.nvim_win_is_valid(win_id) then
+        vim.api.nvim_win_close(win_id, true)
     end
 
-    if self.buf_id and vim.api.nvim_win_is_valid(self.buf_id) then
-        vim.api.nvim_buf_delete(self.buf_id, { force = true })
+    if buf_id and vim.api.nvim_win_is_valid(buf_id) then
+        vim.api.nvim_buf_delete(state.buf_id, { force = true })
     end
 
-    WildUi:reset_highlight()
+    M:reset_highlight()
 end
 
-function WildUi:resize_window()
-    if self.win_id and vim.api.nvim_win_is_valid(self.win_id) then
-        local buf_line_count = vim.api.nvim_buf_line_count(self.buf_id)
-        WildUi:create_window_config(buf_line_count)
-        vim.api.nvim_win_set_config(self.win_id, self.win_config)
+function M.resize_window(win_id)
+    if win_id and vim.api.nvim_win_is_valid(win_id) then
+        local buf_line_count = vim.api.nvim_buf_line_count(buf_id)
+        M.set_config(buf_line_count)
+        vim.api.nvim_win_set_config(win_id, M.config.win_config)
     end
 end
 
-function WildUi.redraw()
+function M.redraw()
     vim.cmd([[redraw]])
 end
 
-function WildUi:update_buffer_contents(data)
-    if self.skip_update then
-        self.skip_update = false
-        return
-    end
-
-    vim.api.nvim_buf_clear_namespace(self.buf_id, -1, 0, -1)
+function M.update_buffer_contents(win_id, buf_id, data)
+    vim.api.nvim_buf_clear_namespace(buf_id, -1, 0, -1)
 
     if #data == 0 then
-        self.is_results = false
+        M.config.is_results = false
         data = { { "No Results", {}, 0 } }
     else
-        self.is_results = true
+        M.config.is_results = true
     end
 
-    if self.buf_id and vim.api.nvim_buf_is_valid(self.buf_id) then
-        WildUi:create_window_config(#data)
-        vim.api.nvim_win_set_config(self.win_id, self.win_config)
+    if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
+        M.set_config(#data)
+        vim.api.nvim_win_set_config(win_id, M.config.win_config)
 
         local command_string = {}
         for _, item in ipairs(data) do
             table.insert(command_string, item[1]) -- Extract the strings
         end
 
-        vim.api.nvim_buf_set_lines(self.buf_id, 0, -1, false, command_string)
+        vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, command_string)
 
-        WildUi.highlight_chars(self.buf_id, data, "#ff8800")
+        M.highlight_chars(buf_id, data, M.config.highlighter.char_color)
     end
 end
 
-function WildUi.highlight_chars(buf_id, data, color)
+function M.highlight_chars(buf_id, data, color)
     local ns_id = vim.api.nvim_create_namespace("wild.nvim")
     vim.api.nvim_set_hl(0, "hlcolor", { fg = color })
 
@@ -132,72 +128,74 @@ function WildUi.highlight_chars(buf_id, data, color)
     end
 end
 
-function WildUi:set_command_line(line_number)
-    self.skip_update = true
-
-    local command = vim.api.nvim_buf_get_lines(self.buf_id, line_number, line_number + 1, false)[1]
+function M.set_command_line(buf_id, line_number)
+    local command = vim.api.nvim_buf_get_lines(buf_id, line_number, line_number + 1, false)[1]
     local input = vim.fn.getcmdline()
 
+    vim.o.eventignore = "CmdlineChanged"
+
     if cmd.is_help(input) then
-        vim.fn.setcmdline("help "..command)
+        vim.fn.setcmdline("help ".. command)
     else
         vim.fn.setcmdline(command)
     end
+
+    vim.o.eventignore = ""
 end
 
-function WildUi:highlight_line()
-    vim.api.nvim_buf_clear_namespace(self.buf_id, self.highlighter.namespace, 0, -1)
+function M:highlight_line(buf_id)
+    vim.api.nvim_buf_clear_namespace(buf_id, M.config.highlighter.namespace, 0, -1)
 
-    local line_content = vim.api.nvim_buf_get_lines(self.buf_id, self.highlighter.current_line, self.highlighter.current_line + 1, false)[1]
+    local line_content = vim.api.nvim_buf_get_lines(buf_id, M.config.highlighter.current_line, M.config.highlighter.current_line + 1, false)[1]
 
-    vim.api.nvim_buf_set_extmark(self.buf_id, self.highlighter.namespace, self.highlighter.current_line, 0, {
+    M.config.highlighter.id = vim.api.nvim_buf_set_extmark(buf_id, M.config.highlighter.namespace, M.config.highlighter.current_line, 0, {
         virt_text = { { line_content, "Visual" } },
         virt_text_pos = "overlay",
         hl_mode = "combine",
         priority = 100
     })
 
-    WildUi.redraw()
+    M.redraw()
 end
 
-function WildUi:highlight_next_line()
-    if not self.is_results then return end
+function M:highlight_next_line(win_id, buf_id)
+    if not M.config.is_results then return end
 
-    local total_lines = vim.api.nvim_buf_line_count(self.buf_id)
-    self.highlighter.current_line = self.highlighter.current_line + 1
+    local total_lines = vim.api.nvim_buf_line_count(buf_id)
+    M.config.highlighter.current_line = M.config.highlighter.current_line + 1
 
-    if self.highlighter.current_line > total_lines - 1 then
-        self.highlighter.current_line = 0
+    if M.config.highlighter.current_line > total_lines - 1 then
+        M.config.highlighter.current_line = 0
     end
 
-    if self.highlighter.current_line >= 0 then
-        vim.api.nvim_win_set_cursor(self.win_id, {self.highlighter.current_line + 1, 0})
+    if M.config.highlighter.current_line >= 0 then
+        vim.api.nvim_win_set_cursor(win_id, {M.config.highlighter.current_line + 1, 0})
     end
 
-    WildUi:highlight_line()
-    WildUi:set_command_line(self.highlighter.current_line)
+    M:highlight_line(buf_id)
+    M.set_command_line(buf_id, M.config.highlighter.current_line)
 end
 
-function WildUi:highlight_previous_line()
-    if not self.is_results then return end
+function M:highlight_previous_line(win_id, buf_id)
+    if not M.config.is_results then return end
 
-    local total_lines = vim.api.nvim_buf_line_count(self.buf_id)
-    self.highlighter.current_line = self.highlighter.current_line - 1
+    local total_lines = vim.api.nvim_buf_line_count(buf_id)
+    M.config.highlighter.current_line = M.config.highlighter.current_line - 1
 
-    if self.highlighter.current_line < 0 then
-        self.highlighter.current_line = total_lines - 1
+    if M.config.highlighter.current_line < 0 then
+        M.config.highlighter.current_line = total_lines - 1
     end
 
-    if self.highlighter.current_line >= 0 then
-        vim.api.nvim_win_set_cursor(self.win_id, {self.highlighter.current_line + 1, 0})
+    if M.config.highlighter.current_line >= 0 then
+        vim.api.nvim_win_set_cursor(win_id, {M.config.highlighter.current_line + 1, 0})
     end
 
-    WildUi:highlight_line()
-    WildUi:set_command_line(self.highlighter.current_line)
+    M:highlight_line(buf_id)
+    M.set_command_line(buf_id, M.config.highlighter.current_line)
 end
 
-function WildUi:reset_highlight()
-    self.highlighter.current_line = -1
+function M:reset_highlight()
+    M.config.highlighter.current_line = -1
 end
 
-return WildUi
+return M
