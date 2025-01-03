@@ -10,6 +10,10 @@ M.defaults = {
     highlights = {
         character_color = "#ff8800",
         line_color = "#ff8800",
+    },
+    keymaps = {
+        next_key = "<Tab>",
+        previous_key = "<S-Tab>",
     }
 }
 
