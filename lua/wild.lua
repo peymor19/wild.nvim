@@ -1,6 +1,7 @@
 local ui = require("ui")
 local fzy = require("fzy")
 local cmd = require("cmd")
+local config = require("config")
 
 local M = {}
 
@@ -29,9 +30,7 @@ local function handle_cmdline_enter(state)
 
     local buf_data = ui.get_buf_data("commands", state.searchables)
 
-    ui.set_config(#buf_data)
-
-    state.win_id, state.buf_id = ui.create_window(buf_data)
+    state.win_id, state.buf_id = ui.create_window(#buf_data)
 
     ui.set_buffer_contents(buf_id, buf_data)
     ui.redraw()
@@ -121,6 +120,9 @@ local function disable_nvim_builtin_cmd_history()
 end
 
 function M:setup()
+    local opts = {}
+    config.setup(opts)
+
     disable_nvim_builtin_cmd_history()
     setup_global_autocmd()
     setup_keymaps()

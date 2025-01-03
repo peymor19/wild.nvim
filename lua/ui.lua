@@ -1,61 +1,61 @@
+local config = require("config")
 local cmd = require("cmd")
 
 local M = {}
 
 M.config = {
     is_results = true,
-    win_config = {
-        relative = "editor",
-        border = "rounded",
-        --borderchars = { "─", "│", " ", "│", "╭", "╮", "│", "│" },
-        style = "minimal",
-        width = 30,
-        height = nil,
-        col = nil,
-        row = nil,
-        zindex = 250
-    },
-    window = {
-        opacity = 15
-    },
     highlighter = {
-        id = nil,
         current_line = -1,
-        namespace = vim.api.nvim_create_namespace("Highlighter"),
-        char_color = "#ff8800"
+        namespace = vim.api.nvim_create_namespace("Highlighter")
     }
 }
+
+local function get_height(buf_line_count)
+    return math.max(math.min(buf_line_count, config.options.window.height), 1)
+end
+
+local function get_row(height)
+    local ui = vim.api.nvim_list_uis()[1]
+
+    if ui == nil then return 0 end
+
+    return math.max(ui.height - height - 4, 0)
+end
+
+local function reset_window_height(win_id, buf_line_count)
+    local config = vim.api.nvim_win_get_config(win_id)
+
+    config.height = get_height(buf_line_count)
+    config.row = get_row(config.height)
+
+    vim.api.nvim_win_set_config(win_id, config)
+end
+
+function M.create_window(buf_line_count)
+    local height = get_height(buf_line_count)
+
+    buf_id = vim.api.nvim_create_buf(false, true)
+    win_id = vim.api.nvim_open_win(buf_id, false, {
+        relative = 'editor',
+        style = 'minimal',
+        width = config.options.window.width,
+        height = height,
+        row = get_row(height),
+        col = 0,
+        border = config.options.window.border,
+        zindex = 250,
+    })
+
+    vim.api.nvim_set_option_value("winblend", config.options.window.opacity, { win = win_id, scope = "local" })
+
+    return win_id, buf_id
+end
 
 function M.get_buf_data(type, searchables)
     return vim.tbl_map(function(item)
         return item.cmd
     end, searchables[type])
-end
-
-function M.set_config(buf_line_count)
-    local ui = vim.api.nvim_list_uis()[1]
-    local col = 0
-    local row = 0
-    local max_height = 10
-
-    local height = math.max(math.min(buf_line_count, max_height), 1)
-
-    if ui ~= nil then
-        row = math.max(ui.height - height - 4, 0)
-    end
-
-    M.config.win_config.height = height
-    M.config.win_config.col = col
-    M.config.win_config.row = row
-end
-
-function M.create_window()
-    buf_id = vim.api.nvim_create_buf(false, true)
-    win_id = vim.api.nvim_open_win(buf_id, false, M.config.win_config)
-
-    vim.api.nvim_set_option_value("winblend", M.config.window.opacity, { win = win_id, scope = "local" })
-
-    return win_id, buf_id
 end
 
 function M.set_buffer_contents(buf_id, buf_data)
@@ -77,8 +77,7 @@ end
 function M.resize_window(win_id)
     if win_id and vim.api.nvim_win_is_valid(win_id) then
         local buf_line_count = vim.api.nvim_buf_line_count(buf_id)
-        M.set_config(buf_line_count)
-        vim.api.nvim_win_set_config(win_id, M.config.win_config)
+        reset_window_height(win_id, buf_line_count)
     end
 end
 
@@ -97,8 +96,7 @@ function M.update_buffer_contents(win_id, buf_id, data)
     end
 
     if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
-        M.set_config(#data)
-        vim.api.nvim_win_set_config(win_id, M.config.win_config)
+        reset_window_height(win_id, #data)
 
         local command_string = {}
         for _, item in ipairs(data) do
@@ -107,13 +105,13 @@ function M.update_buffer_contents(win_id, buf_id, data)
 
         vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, command_string)
 
-        M.highlight_chars(buf_id, data, M.config.highlighter.char_color)
+        M.highlight_chars(buf_id, data)
     end
 end
 
-function M.highlight_chars(buf_id, data, color)
+function M.highlight_chars(buf_id, data)
     local ns_id = vim.api.nvim_create_namespace("wild.nvim")
-    vim.api.nvim_set_hl(0, "hlcolor", { fg = color })
+    vim.api.nvim_set_hl(0, "hlcolor", { fg = config.options.highlights.character_color })
 
     for line_idx, item in ipairs(data) do
         local str, positions = item[1], item[2]
@@ -148,7 +146,7 @@ function M:highlight_line(buf_id)
 
     local line_content = vim.api.nvim_buf_get_lines(buf_id, M.config.highlighter.current_line, M.config.highlighter.current_line + 1, false)[1]
 
-    M.config.highlighter.id = vim.api.nvim_buf_set_extmark(buf_id, M.config.highlighter.namespace, M.config.highlighter.current_line, 0, {
+    vim.api.nvim_buf_set_extmark(buf_id, M.config.highlighter.namespace, M.config.highlighter.current_line, 0, {
         virt_text = { { line_content, "Visual" } },
         virt_text_pos = "overlay",
         hl_mode = "combine",
