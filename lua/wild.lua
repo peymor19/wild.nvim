@@ -112,8 +112,7 @@ local function disable_nvim_builtin_cmd_history()
     vim.api.nvim_set_keymap('c', '<C-f>', '<Nop>', { noremap = true, silent = true })
 end
 
-function M:setup()
-    local opts = {}
+function M.setup(opts)
     config.setup(opts)
 
     disable_nvim_builtin_cmd_history()

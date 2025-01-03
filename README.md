@@ -26,7 +26,7 @@ return {
 
 ```lua
 local wild = require('wild')
-wild:setup()
+wild.setup(opts)
 ```
 
 ## Contributing
