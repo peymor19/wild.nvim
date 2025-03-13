@@ -42,8 +42,12 @@ function M.create_window(buf_line_count)
         row = get_row(height),
         col = 0,
         border = config.options.window.border,
-        zindex = 250,
+        zindex = 250
     })
+
+    vim.api.nvim_set_hl(0, "WildWindowBackground", config.options.window.background_hl)
+    vim.api.nvim_set_hl(0, "WildFloatBorder", config.options.window.border_hl)
+    vim.api.nvim_win_set_option(win_id, "winhighlight", "Normal:WildWindowBackground,FloatBorder:WildFloatBorder")
 
     vim.api.nvim_set_option_value("winblend", config.options.window.opacity, { win = win_id, scope = "local" })
 
@@ -110,7 +114,8 @@ function M.highlight_chars(buf_id, data)
 
     vim.api.nvim_set_hl(0, "highlight_charaters", {
         fg = config.options.highlights.character_color,
-        bg = "#000000",
+        --bg = "#000000",
+        bg = config.options.window.color,
         bold = true
     })
 
@@ -150,7 +155,8 @@ function M.highlight_line(buf_id, line)
 
     vim.api.nvim_set_hl(0, "line_highlight", {
         fg = config.options.highlights.line_color,
-        bg = "#000000",
+        --bg = "#000000",
+        bg = config.options.window.color,
         bold = true
     })
 
