@@ -22,11 +22,10 @@ return {
     }
 ```
 
-### Setup structure
+### Basic Setup
 
 ```lua
-local wild = require('wild')
-wild.setup(opts)
+require('wild').setup()
 ```
 
 ## Contributing
