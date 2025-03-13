@@ -8,8 +8,8 @@ M.defaults = {
         opacity = 15
     },
     highlights = {
-        line_color = "#44475A",
-        character_color = "#ff8800"
+        line_color = "#FFA500",
+        character_color = "#6495ED"
     },
     keymaps = {
         next_key = "<Tab>",
