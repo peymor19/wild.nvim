@@ -3,12 +3,10 @@ local cmd = require("cmd")
 
 local M = {}
 
-M.config = {
+M.state = {
     is_results = true,
-    highlighter = {
-        current_line = -1,
-        namespace = vim.api.nvim_create_namespace("Highlighter")
-    }
+    current_buf_line = nil,
+    highlight_namespace = vim.api.nvim_create_namespace("Highlighter")
 }
 
 local function get_height(buf_line_count)
@@ -71,7 +69,7 @@ function M.close_window(win_id, buf_id)
         vim.api.nvim_buf_delete(state.buf_id, { force = true })
     end
 
-    M:reset_highlight()
+    M.reset_highlight()
 end
 
 function M.resize_window(win_id)
@@ -89,10 +87,10 @@ function M.update_buffer_contents(win_id, buf_id, data)
     vim.api.nvim_buf_clear_namespace(buf_id, -1, 0, -1)
 
     if #data == 0 then
-        M.config.is_results = false
+        M.state.is_results = false
         data = { { "No Results", {}, 0 } }
     else
-        M.config.is_results = true
+        M.state.is_results = true
     end
 
     if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
@@ -141,12 +139,12 @@ function M.set_command_line(buf_id, line_number)
     vim.o.eventignore = ""
 end
 
-function M:highlight_line(buf_id)
-    vim.api.nvim_buf_clear_namespace(buf_id, M.config.highlighter.namespace, 0, -1)
+function M.highlight_line(buf_id, line)
+    vim.api.nvim_buf_clear_namespace(buf_id, M.state.highlight_namespace, 0, -1)
 
-    local line_content = vim.api.nvim_buf_get_lines(buf_id, M.config.highlighter.current_line, M.config.highlighter.current_line + 1, false)[1]
+    local line_content = vim.api.nvim_buf_get_lines(buf_id, line, line + 1, false)[1]
 
-    vim.api.nvim_buf_set_extmark(buf_id, M.config.highlighter.namespace, M.config.highlighter.current_line, 0, {
+    vim.api.nvim_buf_set_extmark(buf_id, M.state.highlight_namespace, line, 0, {
         virt_text = { { line_content, "Visual" } },
         virt_text_pos = "overlay",
         hl_mode = "combine",
@@ -156,44 +154,28 @@ function M:highlight_line(buf_id)
     M.redraw()
 end
 
-function M:highlight_next_line(win_id, buf_id)
-    if not M.config.is_results then return end
+function M.select_command(win_id, buf_id, offset)
+    local state = M.state
+
+    if not state.is_results then return end
 
     local total_lines = vim.api.nvim_buf_line_count(buf_id)
-    M.config.highlighter.current_line = M.config.highlighter.current_line + 1
+    if total_lines == 0 then return end
 
-    if M.config.highlighter.current_line > total_lines - 1 then
-        M.config.highlighter.current_line = 0
+    if state.current_buf_line == nil then
+        state.current_buf_line = 0
+    else
+        local delta = offset == 1 and 1 or -1
+        state.current_buf_line = (state.current_buf_line + delta) % total_lines
     end
 
-    if M.config.highlighter.current_line >= 0 then
-        vim.api.nvim_win_set_cursor(win_id, {M.config.highlighter.current_line + 1, 0})
-    end
-
-    M:highlight_line(buf_id)
-    M.set_command_line(buf_id, M.config.highlighter.current_line)
+    vim.api.nvim_win_set_cursor(win_id, {state.current_buf_line + 1, 0})
+    M.highlight_line(buf_id, state.current_buf_line)
+    M.set_command_line(buf_id, state.current_buf_line)
 end
 
-function M:highlight_previous_line(win_id, buf_id)
-    if not M.config.is_results then return end
-
-    local total_lines = vim.api.nvim_buf_line_count(buf_id)
-    M.config.highlighter.current_line = M.config.highlighter.current_line - 1
-
-    if M.config.highlighter.current_line < 0 then
-        M.config.highlighter.current_line = total_lines - 1
-    end
-
-    if M.config.highlighter.current_line >= 0 then
-        vim.api.nvim_win_set_cursor(win_id, {M.config.highlighter.current_line + 1, 0})
-    end
-
-    M:highlight_line(buf_id)
-    M.set_command_line(buf_id, M.config.highlighter.current_line)
-end
-
-function M:reset_highlight()
-    M.config.highlighter.current_line = -1
+function M.reset_highlight()
+    M.state.current_buf_line = nil
 end
 
 return M

@@ -100,16 +100,16 @@ local function setup_global_autocmd()
 end
 
 local function setup_keymaps()
-    vim.api.nvim_create_user_command("WildNext", function() ui:highlight_next_line(M.state.win_id, M.state.buf_id) end, {desc = "Next Command" })
-    vim.api.nvim_create_user_command("WildPrevious", function() ui:highlight_previous_line(M.state.win_id, M.state.buf_id) end, {desc = "Previous Command" })
-    vim.api.nvim_set_keymap('c', config.options.keymaps.next_key, "<Cmd>WildNext<CR>", { noremap = true })
-    vim.api.nvim_set_keymap('c', config.options.keymaps.previous_key, "<Cmd>WildPrevious<CR>", { noremap = true })
-
+    vim.api.nvim_set_keymap('c', config.options.keymaps.next_key, "", { callback = function() ui.select_command(M.state.win_id, M.state.buf_id, 1) end, noremap = true })
+    vim.api.nvim_set_keymap('c', config.options.keymaps.previous_key, "", { callback = function() ui.select_command(M.state.win_id, M.state.buf_id, -1) end, noremap = true })
     -- vim.api.nvim_create_user_command("WildResetHistory", function() cmd:resethistory() end, {desc = "Resets command history" })
 end
 
 local function disable_nvim_builtin_cmd_history()
     vim.api.nvim_set_keymap('c', '<C-f>', '<Nop>', { noremap = true, silent = true })
+    vim.api.nvim_set_keymap('n', 'q:', '<Nop>', { noremap = true, silent = true })
+    vim.api.nvim_set_keymap('n', 'q/', '<Nop>', { noremap = true, silent = true })
+    vim.api.nvim_set_keymap('n', 'q?', '<Nop>', { noremap = true, silent = true })
 end
 
 function M.setup(opts)

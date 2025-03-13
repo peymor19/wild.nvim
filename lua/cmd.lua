@@ -1,7 +1,7 @@
-local Cmd = {}
+local M = {}
 
-function Cmd.get_searchables(commands_from_file)
-    vim_commands = Cmd.get_vim_commands()
+function M.get_searchables(commands_from_file)
+    vim_commands = M.get_vim_commands()
 
     local command_usage = {}
     for _, item in ipairs(commands_from_file) do
@@ -16,13 +16,13 @@ function Cmd.get_searchables(commands_from_file)
         })
     end
 
-    local commands = Cmd.sort_by_usage(commands_with_count)
+    local commands = M.sort_by_usage(commands_with_count)
 
-    local help_tags = Cmd.get_help_tags()
+    local help_tags = M.get_help_tags()
     return { commands = commands, help_tags = help_tags }
 end
 
-function Cmd.get_vim_commands()
+function M.get_vim_commands()
     commands = {}
 
     for _, name in pairs(vim.fn.getcompletion("", "cmdline")) do
@@ -34,7 +34,7 @@ function Cmd.get_vim_commands()
     return commands
 end
 
-function Cmd.get_help_tags()
+function M.get_help_tags()
     local runtimepath = vim.o.runtimepath
     local paths = vim.split(runtimepath, ',')
     local help_tags = {}
@@ -61,7 +61,7 @@ function Cmd.get_help_tags()
     return help_tags
 end
 
-function Cmd.in_list(input, commands)
+function M.in_list(input, commands)
     for _, item in ipairs(commands) do
         if string.match(item.cmd, input) and input ~= "" then
             return true
@@ -71,25 +71,25 @@ function Cmd.in_list(input, commands)
     return false
 end
 
-function Cmd.inc_command(command, commands)
-    if not Cmd.in_list(command, commands) then return commands end
+function M.inc_command(command, commands)
+    if not M.in_list(command, commands) then return commands end
 
     for _, item in ipairs(commands) do
         if item.cmd == command then
             item.count = item.count + 1
-            commands = Cmd.sort_by_usage(commands)
+            commands = M.sort_by_usage(commands)
             return commands
         end
     end
 
     table.insert(commands, {cmd = command, count = 1})
 
-    commands = Cmd.sort_by_usage(commands)
+    commands = M.sort_by_usage(commands)
 
     return commands
 end
 
-function Cmd.sort_by_usage(commands)
+function M.sort_by_usage(commands)
     table.sort(commands, function(a, b)
         return a.count > b.count
     end)
@@ -97,7 +97,7 @@ function Cmd.sort_by_usage(commands)
     return commands
 end
 
-function Cmd.to_file(file_path, commands)
+function M.to_file(file_path, commands)
     if #commands == 0 then return end
 
     local file = io.open(file_path, 'w')
@@ -107,7 +107,7 @@ function Cmd.to_file(file_path, commands)
     end
 end
 
-function Cmd.from_file(file_path)
+function M.from_file(file_path)
     local file = io.open(file_path, 'r')
     local data = ""
 
@@ -125,7 +125,7 @@ function Cmd.from_file(file_path)
     return commands
 end
 
-function Cmd.is_help(input)
+function M.is_help(input)
     local valid_prefixes = { "h ", "he ", "hel ", "help "}
     local is_help = false
 
@@ -138,19 +138,19 @@ function Cmd.is_help(input)
     return is_help
 end
 
-function Cmd.searchable_type_from_input(input)
+function M.searchable_type_from_input(input)
     local input = vim.fn.getcmdline()
     local type = "commands"
 
-    if Cmd.is_help(input) then
-        input = Cmd.tail(input)
+    if M.is_help(input) then
+        input = M.tail(input)
         type =  "help_tags"
     end
 
     return input, type
 end
 
-function Cmd.tail(command)
+function M.tail(command)
   local space_pos = command:find(" ")
 
   if space_pos then
@@ -160,4 +160,4 @@ function Cmd.tail(command)
   end
 end
 
-return Cmd
+return M

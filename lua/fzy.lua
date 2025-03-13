@@ -1,11 +1,8 @@
 local fzy = require('fzy-lua-native')
-local cmd = require("cmd")
 
-local WildFzy = {}
-WildFzy.__index = WildFzy
+local M = {}
 
-
-function WildFzy.find_matches(needle, haystack)
+function M.find_matches(needle, haystack)
     needle = needle:lower()
 
     -- returns {line, position, score}
@@ -16,4 +13,4 @@ function WildFzy.find_matches(needle, haystack)
     return scored_haystack
 end
 
-return WildFzy
+return M
