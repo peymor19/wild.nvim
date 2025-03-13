@@ -84,8 +84,6 @@ function M.redraw()
 end
 
 function M.update_buffer_contents(win_id, buf_id, data)
-    vim.api.nvim_buf_clear_namespace(buf_id, -1, 0, -1)
-
     if #data == 0 then
         M.state.is_results = false
         data = { { "No Results", {}, 0 } }
@@ -108,17 +106,23 @@ function M.update_buffer_contents(win_id, buf_id, data)
 end
 
 function M.highlight_chars(buf_id, data)
-    local ns_id = vim.api.nvim_create_namespace("wild.nvim")
-    vim.api.nvim_set_hl(0, "hlcolor", { fg = config.options.highlights.character_color })
+    ns_id = vim.api.nvim_create_namespace("wild_highlight_characters")
+
+    vim.api.nvim_set_hl(0, "highlight_charaters", {
+        fg = config.options.highlights.character_color,
+        bg = "#000000",
+        bold = true
+    })
 
     for line_idx, item in ipairs(data) do
         local str, positions = item[1], item[2]
         for _, pos in ipairs(positions) do
             local char = str:sub(pos, pos)
             vim.api.nvim_buf_set_extmark(buf_id, ns_id, line_idx - 1, pos - 1, {
-                virt_text = { { char, "hlcolor" } },
+                virt_text = { { char, "highlight_charaters" } },
                 virt_text_pos = "overlay",
-                priority = 0
+                hl_mode = "combine",
+                priority = 99
             })
         end
     end
@@ -140,18 +144,25 @@ function M.set_command_line(buf_id, line_number)
 end
 
 function M.highlight_line(buf_id, line)
-    vim.api.nvim_buf_clear_namespace(buf_id, M.state.highlight_namespace, 0, -1)
+    ns_id = vim.api.nvim_create_namespace("wild_highlight_line")
 
     local line_content = vim.api.nvim_buf_get_lines(buf_id, line, line + 1, false)[1]
 
-    vim.api.nvim_buf_set_extmark(buf_id, M.state.highlight_namespace, line, 0, {
-        virt_text = { { line_content, "Visual" } },
-        virt_text_pos = "overlay",
-        hl_mode = "combine",
+    vim.api.nvim_set_hl(0, "line_highlight", {
+        fg = config.options.highlights.line_color,
+        bg = "#000000",
+        bold = true
+    })
+
+    vim.api.nvim_buf_set_extmark(buf_id, ns_id, line, 0, {
+        hl_group = "line_highlight",
+        end_row = line + 1,
         priority = 100
     })
 
     M.redraw()
+
+    vim.api.nvim_buf_clear_namespace(buf_id, ns_id, 0, -1)
 end
 
 function M.select_command(win_id, buf_id, offset)
