@@ -4,10 +4,17 @@ local cmd = require("cmd")
 local M = {}
 
 M.state = {
-    is_results = true,
     current_buf_line = nil,
     highlight_namespace = vim.api.nvim_create_namespace("Highlighter")
 }
+
+local function invalid_buffer(buf_id)
+    if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
+        return false
+    else
+        return true
+    end
+end
 
 local function get_height(buf_line_count)
     return math.max(math.min(buf_line_count, config.options.window.height), 1)
@@ -88,25 +95,18 @@ function M.redraw()
 end
 
 function M.update_buffer_contents(win_id, buf_id, data)
-    if #data == 0 then
-        M.state.is_results = false
-        data = { { "No Results", {}, 0 } }
-    else
-        M.state.is_results = true
+    if invalid_buffer(buf_id) then return end
+
+    reset_window_height(win_id, #data)
+
+    local results = {"No Results"}
+
+    if #data ~= 0 then
+        results = vim.tbl_map(function(d) return d[1] end, data)
     end
 
-    if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
-        reset_window_height(win_id, #data)
-
-        local command_string = {}
-        for _, item in ipairs(data) do
-            table.insert(command_string, item[1]) -- Extract the strings
-        end
-
-        vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, command_string)
-
-        M.highlight_chars(buf_id, data)
-    end
+    vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, results)
+    M.highlight_chars(buf_id, data)
 end
 
 function M.highlight_chars(buf_id, data)
@@ -114,7 +114,6 @@ function M.highlight_chars(buf_id, data)
 
     vim.api.nvim_set_hl(0, "highlight_charaters", {
         fg = config.options.highlights.character_color,
-        --bg = "#000000",
         bg = config.options.window.color,
         bold = true
     })
@@ -155,7 +154,6 @@ function M.highlight_line(buf_id, line)
 
     vim.api.nvim_set_hl(0, "line_highlight", {
         fg = config.options.highlights.line_color,
-        --bg = "#000000",
         bg = config.options.window.color,
         bold = true
     })
@@ -171,10 +169,20 @@ function M.highlight_line(buf_id, line)
     vim.api.nvim_buf_clear_namespace(buf_id, ns_id, 0, -1)
 end
 
+local function has_results(buf_id)
+    local lines = vim.api.nvim_buf_get_lines(buf_id, 0, -1, false)
+
+    if #lines == 1 and lines[1] == "No Results" then
+        return false
+    else
+        return true
+    end
+end
+
 function M.select_command(win_id, buf_id, offset)
     local state = M.state
 
-    if not state.is_results then return end
+    if not has_results(buf_id) then return end
 
     local total_lines = vim.api.nvim_buf_line_count(buf_id)
     if total_lines == 0 then return end
