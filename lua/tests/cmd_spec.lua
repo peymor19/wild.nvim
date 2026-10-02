@@ -20,6 +20,23 @@ describe("get_vim_commands", function()
     end)
 end)
 
+describe("command_name", function()
+    it("should resolve abbreviations to the full command name", function()
+        assert.is_equal("edit", Cmd.command_name("e"))
+        assert.is_equal("echo", Cmd.command_name("ec"))
+    end)
+
+    it("should ignore ranges and arguments", function()
+        assert.is_equal("edit", Cmd.command_name("e foo.txt"))
+        assert.is_equal("substitute", Cmd.command_name("%s/foo/bar/g"))
+    end)
+
+    it("should return nil for an invalid command", function()
+        assert.is_nil(Cmd.command_name("notacommand"))
+        assert.is_nil(Cmd.command_name(""))
+    end)
+end)
+
 describe("in_list", function()
     it("should return true with command input matching a command in list", function()
         local commands = {{cmd = "foo", count = 1}, {cmd = "bar", count = 10}, {cmd="baz", count = 5}}
@@ -35,6 +52,26 @@ describe("in_list", function()
         local result = Cmd.in_list("foobar", commands)
 
         assert.falsy(result)
+    end)
+
+    it("should return false with input that is only a substring of a command", function()
+        local commands = {{cmd = "echo", count = 1}}
+
+        assert.falsy(Cmd.in_list("ec", commands))
+    end)
+
+    it("should return false with empty input", function()
+        local commands = {{cmd = "echo", count = 1}}
+
+        assert.falsy(Cmd.in_list("", commands))
+    end)
+
+    it("should not error on input containing lua pattern characters", function()
+        local commands = {{cmd = "echo", count = 1}}
+
+        for _, input in ipairs({"echo(", "%", "e["}) do
+            assert.falsy(Cmd.in_list(input, commands))
+        end
     end)
 end)
 
@@ -67,6 +104,14 @@ describe("inc_command", function()
         result = Cmd.inc_command("foobar", commands)
 
         assert.are.same(commands, result)
+    end)
+
+    it("should not add a new entry for a partial command", function()
+        local commands = {{cmd = "echo", count = 1}}
+
+        local result = Cmd.inc_command("ec", commands)
+
+        assert.are.same({{cmd = "echo", count = 1}}, result)
     end)
 end)
 
@@ -162,5 +207,21 @@ describe("tail", function()
         result = Cmd.tail("test")
 
         assert.is_equal(result, "")
+    end)
+end)
+
+describe("searchable_type_from_input", function()
+    it("should search commands for plain input", function()
+        local input, type = Cmd.searchable_type_from_input("ed")
+
+        assert.is_equal("ed", input)
+        assert.is_equal("commands", type)
+    end)
+
+    it("should search help tags for help input", function()
+        local input, type = Cmd.searchable_type_from_input("h tags")
+
+        assert.is_equal("tags", input)
+        assert.is_equal("help_tags", type)
     end)
 end)

@@ -1,7 +1,7 @@
 local M = {}
 
 function M.get_searchables(commands_from_file)
-    vim_commands = M.get_vim_commands()
+    local vim_commands = M.get_vim_commands()
 
     local command_usage = {}
     for _, item in ipairs(commands_from_file) do
@@ -23,7 +23,7 @@ function M.get_searchables(commands_from_file)
 end
 
 function M.get_vim_commands()
-    commands = {}
+    local commands = {}
 
     for _, name in pairs(vim.fn.getcompletion("", "cmdline")) do
         if not string.match(name, "[~!?#&<>@=]") then
@@ -42,7 +42,7 @@ function M.get_help_tags()
     for _, path in ipairs(paths) do
         local doc_path = path .. '/doc'
 
-        if vim.fn.isdirectory(doc_path) then
+        if vim.fn.isdirectory(doc_path) == 1 then
             local files = vim.fn.globpath(doc_path, 'tags', false, true)
 
             for _, file in ipairs(files) do
@@ -61,9 +61,19 @@ function M.get_help_tags()
     return help_tags
 end
 
+-- Resolves a command line to its full command name, e.g. "e foo.txt" -> "edit".
+-- Returns nil when the line is not a valid ex command.
+function M.command_name(command_line)
+    local ok, parsed = pcall(vim.api.nvim_parse_cmd, command_line, {})
+
+    if not ok then return nil end
+
+    return parsed.cmd
+end
+
 function M.in_list(input, commands)
     for _, item in ipairs(commands) do
-        if string.match(item.cmd, input) and input ~= "" then
+        if item.cmd == input then
             return true
         end
     end
@@ -81,10 +91,6 @@ function M.inc_command(command, commands)
             return commands
         end
     end
-
-    table.insert(commands, {cmd = command, count = 1})
-
-    commands = M.sort_by_usage(commands)
 
     return commands
 end
@@ -139,7 +145,6 @@ function M.is_help(input)
 end
 
 function M.searchable_type_from_input(input)
-    local input = vim.fn.getcmdline()
     local type = "commands"
 
     if M.is_help(input) then
