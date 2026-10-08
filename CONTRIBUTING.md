@@ -41,7 +41,8 @@ CI runs the same checks against Neovim stable and nightly, so run `make check` b
 
 | Path                      | Purpose                                       |
 | ------------------------- | --------------------------------------------- |
-| `lua/wild/init.lua`       | `setup()`, autocmds, keymaps and plugin state |
+| `lua/wild/init.lua`       | `setup()`: autocmds, keymaps and commands     |
+| `lua/wild/popup.lua`      | Popup state and command-line event handlers   |
 | `lua/wild/config.lua`     | Defaults, option types and validation         |
 | `lua/wild/cmd.lua`        | Commands, arguments and help tags             |
 | `lua/wild/ui.lua`         | The popup window                              |
