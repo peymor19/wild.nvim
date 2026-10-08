@@ -1,5 +1,5 @@
 local config = require("wild.config")
-local cmd = require("wild.cmd")
+local history = require("wild.history")
 
 local function run_health()
     vim.cmd("checkhealth wild")
@@ -22,16 +22,16 @@ local function assert_contains(output, text)
 end
 
 describe("checkhealth wild", function()
-    local original_path = cmd.history_path
+    local original_path = history.path
 
     before_each(function()
         config.options = {}
-        cmd.history_path = vim.fn.tempname()
+        history.path = vim.fn.tempname()
     end)
 
     after_each(function()
-        os.remove(cmd.history_path)
-        cmd.history_path = original_path
+        os.remove(history.path)
+        history.path = original_path
         pcall(vim.keymap.del, "c", "<C-n>")
     end)
 
@@ -55,13 +55,16 @@ describe("checkhealth wild", function()
     end)
 
     it("reports the number of commands in a valid history file", function()
-        cmd.to_file(cmd.history_path, { { cmd = "edit", count = 2 }, { cmd = "write", count = 1 } })
+        history.write(history.path, {
+            { line = "e foo.txt", count = 2, last_used = os.time() },
+            { line = "w", count = 1, last_used = os.time() },
+        })
 
         assert_contains(run_health(), "OK 2 commands in history")
     end)
 
     it("errors when the history file is not valid JSON", function()
-        vim.fn.writefile({ "not json" }, cmd.history_path)
+        vim.fn.writefile({ "not json" }, history.path)
 
         assert_contains(run_health(), "ERROR History file is not valid JSON")
     end)

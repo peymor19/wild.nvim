@@ -1,8 +1,8 @@
 # wild.nvim
 
-Fuzzy command-line completion for Neovim, ordered by how often you use each command.
+Fuzzy command-line completion for Neovim, ranked by your command history.
 
-Press `:` and a popup lists every Ex command, most used first. Type to fuzzy filter, press `<Tab>` to pick. Type `:h ` and it searches help tags instead.
+Press `:` and a popup lists the command lines you run most, followed by every other Ex command. Type to fuzzy filter, press `<Tab>` to pick. Type `:h ` and it searches help tags instead.
 
 <!-- TODO: demo GIF -->
 
@@ -10,7 +10,8 @@ Press `:` and a popup lists every Ex command, most used first. Type to fuzzy fil
 
 - Popup opens as soon as you press `:`, no extra key needed
 - Fuzzy matching with [fzy](https://github.com/romgrk/fzy-lua-native), with the matched characters highlighted
-- Commands you run most often come first
+- Past command lines ranked by frecency (how often and how recently you ran them)
+- History is shared between Neovim instances
 - `:h`, `:he`, `:hel` and `:help` search help tags
 - `<Tab>` and `<S-Tab>` work as usual in `/`, `?` and `input()` prompts
 - Highlight groups that follow your colorscheme
@@ -80,13 +81,15 @@ vim.api.nvim_set_hl(0, "WildSelection", { fg = "#ff79c6", bold = true })
 
 ## Commands
 
-| Command             | Description                                  |
-| ------------------- | -------------------------------------------- |
-| `:WildResetHistory` | Delete the saved history and start from zero |
+| Command             | Description              |
+| ------------------- | ------------------------ |
+| `:WildResetHistory` | Delete the saved history |
 
 ## History
 
-Each command you run from `:` adds one to its count. Counts are kept per command, so `:e foo.txt` and `:edit bar.txt` both count toward `edit`. Cancelled command lines are not counted.
+Each command line you run from `:` is saved exactly as typed, so `:e foo.txt` and `:e bar.txt` are separate entries. Cancelled lines and invalid commands are not saved.
+
+Entries are ranked by frecency: each use counts 4× within the last hour, 2× within a day, 1× within a week and ¼× after that. Up to 1000 entries are kept, and every Neovim instance adds to the same file.
 
 History is saved to `stdpath("data")/command_history.json`.
 

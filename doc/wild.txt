@@ -1,4 +1,4 @@
-*wild.txt*  Fuzzy command-line completion ordered by how often you use it
+*wild.txt*  Fuzzy command-line completion ranked by your command history
 
 ==============================================================================
 CONTENTS                                                       *wild-contents*
@@ -17,9 +17,9 @@ CONTENTS                                                       *wild-contents*
 1. INTRODUCTION                                            *wild-introduction*
 
 wild.nvim shows a popup of Ex commands whenever you open the |cmdline| with
-`:`. Commands you run most often are listed first, and typing filters the list
-with fuzzy matching. Typing `:help` (or `:h`, `:he`, `:hel`) followed by a
-space searches help tags instead.
+`:`. Command lines you ran before are listed first, most frequent and recent
+at the top, and typing filters the list with fuzzy matching. Typing `:help`
+(or `:h`, `:he`, `:hel`) followed by a space searches help tags instead.
 
 ==============================================================================
 2. REQUIREMENTS                                            *wild-requirements*
@@ -43,8 +43,8 @@ With lazy.nvim: >lua
 ==============================================================================
 4. USAGE                                                          *wild-usage*
 
-Press `:` to open the command line. The popup lists every Ex command, most
-used first.
+Press `:` to open the command line. The popup lists your past command lines,
+ranked by |wild-history|, followed by every other Ex command.
 
 Type to fuzzy filter the list. Matched characters are highlighted with
 |hl-WildMatch|.
@@ -141,8 +141,7 @@ disable_cmdwin ~
 
                                                            *:WildResetHistory*
 :WildResetHistory
-    Delete the saved history so every command is back to zero uses. See
-    |wild-history|.
+    Delete the saved history. See |wild-history|.
 
 ==============================================================================
 7. HIGHLIGHTS                                                *wild-highlights*
@@ -170,9 +169,17 @@ Example: >lua
 ==============================================================================
 8. HISTORY                                                      *wild-history*
 
-Each time you run a command from `:`, its use count goes up by one. Counts are
-kept per command, not per command line, so `:e foo.txt` and `:edit bar.txt`
-both count toward `edit`. Cancelled command lines are not counted.
+Each command line you run from `:` is saved exactly as typed, so `:e foo.txt`
+and `:e bar.txt` are separate entries. Cancelled lines and lines that are not
+valid Ex commands are not saved.
+
+Entries are ranked by "frecency": how often you ran the line, weighted by how
+recently. Each use counts 4 times when the last use was within an hour, twice
+within a day, once within a week, and a quarter after that. Up to 1000 entries
+are kept.
+
+The file is read again before every save, so several Neovim instances add to
+the same history instead of overwriting each other.
 
 History is saved as JSON in: >
     stdpath("data")/command_history.json

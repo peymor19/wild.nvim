@@ -1,5 +1,5 @@
 local config = require("wild.config")
-local cmd = require("wild.cmd")
+local history = require("wild.history")
 
 local M = {}
 
@@ -68,7 +68,7 @@ end
 local function check_history()
     vim.health.start("wild.nvim: history")
 
-    local path = cmd.history_path
+    local path = history.path
     local dir = vim.fs.dirname(path)
 
     if vim.fn.isdirectory(dir) == 1 and vim.fn.filewritable(dir) ~= 2 then

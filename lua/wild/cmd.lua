@@ -1,27 +1,27 @@
+local history = require("wild.history")
+
 local M = {}
 
-M.history_path = vim.fn.stdpath("data") .. "/command_history.json"
+function M.get_searchables(entries, now)
+    return { commands = M.get_commands(entries, now), help_tags = M.get_help_tags() }
+end
 
-function M.get_searchables(commands_from_file)
-    local vim_commands = M.get_vim_commands()
+function M.get_commands(entries, now)
+    local commands = {}
+    local seen = {}
 
-    local command_usage = {}
-    for _, item in ipairs(commands_from_file) do
-        command_usage[item.cmd] = item.count
+    for _, entry in ipairs(history.sort(entries, now)) do
+        table.insert(commands, { cmd = entry.line })
+        seen[entry.line] = true
     end
 
-    local commands_with_count = {}
-    for _, cmd in ipairs(vim_commands) do
-        table.insert(commands_with_count, {
-            cmd = cmd,
-            count = command_usage[cmd] or 0,
-        })
+    for _, name in ipairs(M.get_vim_commands()) do
+        if not seen[name] then
+            table.insert(commands, { cmd = name })
+        end
     end
 
-    local commands = M.sort_by_usage(commands_with_count)
-
-    local help_tags = M.get_help_tags()
-    return { commands = commands, help_tags = help_tags }
+    return commands
 end
 
 function M.get_vim_commands()
@@ -60,61 +60,6 @@ function M.command_name(command_line)
     end
 
     return parsed.cmd
-end
-
-function M.inc_command(command, commands)
-    for _, item in ipairs(commands) do
-        if item.cmd == command then
-            item.count = item.count + 1
-            return M.sort_by_usage(commands)
-        end
-    end
-
-    return commands
-end
-
-function M.sort_by_usage(commands)
-    table.sort(commands, function(a, b)
-        return a.count > b.count
-    end)
-
-    return commands
-end
-
-function M.to_file(file_path, commands)
-    if #commands == 0 then
-        return
-    end
-
-    local used = vim.tbl_filter(function(item)
-        return item.count > 0
-    end, commands)
-
-    vim.fn.mkdir(vim.fs.dirname(file_path), "p")
-
-    local file = io.open(file_path, "w")
-    if file then
-        file:write(vim.json.encode(used))
-        file:close()
-    end
-end
-
-function M.from_file(file_path)
-    local file = io.open(file_path, "r")
-    local data = ""
-
-    if file then
-        data = file:read("*all")
-        file:close()
-    end
-
-    local ok, commands = pcall(vim.json.decode, data)
-
-    if not ok then
-        return {}
-    end
-
-    return commands
 end
 
 function M.is_help(input)

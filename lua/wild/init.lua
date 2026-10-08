@@ -1,6 +1,7 @@
 local ui = require("wild.ui")
 local fzy = require("wild.fzy")
 local cmd = require("wild.cmd")
+local history = require("wild.history")
 local config = require("wild.config")
 local highlights = require("wild.highlights")
 
@@ -15,11 +16,9 @@ local state = {
     prefix = "",
 }
 
-local file_path = cmd.history_path
-
 local function get_searchables()
-    local commands_from_file = cmd.from_file(file_path)
-    return cmd.get_searchables(commands_from_file)
+    local now = os.time()
+    return cmd.get_searchables(history.read(history.path), now)
 end
 
 local function handle_cmdline_enter()
@@ -44,11 +43,14 @@ end
 
 local function handle_cmdline_leave()
     if vim.fn.getcmdtype() == ":" and not vim.v.event.abort then
-        local command = cmd.command_name(vim.fn.getcmdline())
-        local updated_commands = cmd.inc_command(command, state.searchables.commands)
+        local line = vim.trim(vim.fn.getcmdline())
+        local name = cmd.command_name(line)
 
-        cmd.to_file(file_path, updated_commands)
-        state.searchables.commands = updated_commands
+        if name and name ~= "" then
+            local now = os.time()
+            local entries = history.record(history.path, line, now)
+            state.searchables.commands = cmd.get_commands(entries, now)
+        end
     end
 
     ui.close_window(state.win_id, state.buf_id)
@@ -181,7 +183,7 @@ local function disable_cmdwin()
 end
 
 local function reset_history()
-    os.remove(file_path)
+    os.remove(history.path)
     state.searchables = get_searchables()
     vim.notify("wild.nvim: command history reset")
 end
