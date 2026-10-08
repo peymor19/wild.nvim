@@ -21,6 +21,7 @@
 ---@field highlights? wild.HighlightsConfig
 ---@field keymaps? wild.KeymapsConfig
 ---@field disable_cmdwin? boolean Disable q:, q/, q? and <C-f>
+---@field search? boolean Show search history for / and ?
 
 local M = {}
 
@@ -45,6 +46,7 @@ M.defaults = {
         previous_key = "<S-Tab>",
     },
     disable_cmdwin = true,
+    search = true,
 }
 
 ---@type wild.Config
@@ -75,6 +77,7 @@ function M.validate(options)
     vim.validate("keymaps.next_key", keymaps.next_key, "string")
     vim.validate("keymaps.previous_key", keymaps.previous_key, "string")
     vim.validate("disable_cmdwin", options.disable_cmdwin, "boolean")
+    vim.validate("search", options.search, "boolean")
 end
 
 ---@param options? wild.Config

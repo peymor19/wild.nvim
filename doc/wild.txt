@@ -57,8 +57,15 @@ Both keys wrap around at the ends of the list. Typing again clears the
 selection and starts from the top. The keys can be changed with
 |wild-config-keymaps|.
 
-When the popup is not open, as in `/` and `?` searches or |input()| prompts,
-<Tab> and <S-Tab> keep their normal behavior.
+When the popup is not open, as in |input()| prompts, <Tab> and <S-Tab> keep
+their normal behavior.
+
+Searches ~
+                                                                 *wild-search*
+Pressing `/` or `?` opens the popup with your past searches, ranked by
+|wild-history| and fuzzy filtered as you type. `/` and `?` share one history.
+Before your first search, the popup shows "No History". Turn it off with
+|wild-config-search|.
 
 Arguments ~
                                                               *wild-arguments*
@@ -107,6 +114,7 @@ Default configuration: >lua
             previous_key = "<S-Tab>",
         },
         disable_cmdwin = true,
+        search = true,
     })
 <
 
@@ -158,12 +166,17 @@ disable_cmdwin ~
     When true, `q:`, `q/`, `q?` and command-line <C-f> do nothing instead of
     opening the |cmdwin|. Set to false to keep the command-line window.
 
+                                                          *wild-config-search*
+search ~
+    When true, `/` and `?` show your search history, see |wild-search|.
+    Set to false to leave searches alone.
+
 ==============================================================================
 6. COMMANDS                                                    *wild-commands*
 
                                                            *:WildResetHistory*
 :WildResetHistory
-    Delete the saved history. See |wild-history|.
+    Delete the saved command and search history. See |wild-history|.
 
 ==============================================================================
 7. HIGHLIGHTS                                                *wild-highlights*
@@ -194,7 +207,8 @@ Example: >lua
 
 Each command line you run from `:` is saved exactly as typed, so `:e foo.txt`
 and `:e bar.txt` are separate entries. Cancelled lines and lines that are not
-valid Ex commands are not saved.
+valid Ex commands are not saved. Searches from `/` and `?` are saved the same
+way in their own history.
 
 Entries are ranked by "frecency": how often you ran the line, weighted by how
 recently. Each use counts 4 times when the last use was within an hour, twice
@@ -206,6 +220,7 @@ the same history instead of overwriting each other.
 
 History is saved as JSON in: >
     stdpath("data")/command_history.json
+    stdpath("data")/search_history.json
 <
 Use |:WildResetHistory| to start over.
 
@@ -217,6 +232,6 @@ Run `:checkhealth wild` to check that:
 - Neovim is new enough and fzy-lua-native can be loaded
 - |wild.setup()| has been called
 - the selection keys are not mapped by another plugin
-- the history file can be written and is valid JSON
+- the history files can be written and are valid JSON
 
  vim:tw=78:ts=8:noet:ft=help:norl:

@@ -41,6 +41,13 @@ describe("config.setup", function()
         assert.matches("keymaps", err)
     end)
 
+    it("should error when search is not a boolean", function()
+        local ok, err = pcall(config.setup, { search = "yes" })
+
+        assert.is_false(ok)
+        assert.matches("search", err)
+    end)
+
     it("should error when disable_cmdwin is not a boolean", function()
         local ok, err = pcall(config.setup, { disable_cmdwin = "yes" })
 

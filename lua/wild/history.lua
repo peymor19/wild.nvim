@@ -1,6 +1,7 @@
 local M = {}
 
 M.path = vim.fn.stdpath("data") .. "/command_history.json"
+M.search_path = vim.fn.stdpath("data") .. "/search_history.json"
 M.max_entries = 1000
 
 local HOUR = 60 * 60
@@ -44,6 +45,15 @@ function M.sort(entries, now)
     end)
 
     return entries
+end
+
+---@param entries wild.HistoryEntry[]
+---@param now integer
+---@return string[]
+function M.lines(entries, now)
+    return vim.tbl_map(function(entry)
+        return entry.line
+    end, M.sort(entries, now))
 end
 
 local function is_entry(item)

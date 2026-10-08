@@ -14,7 +14,8 @@ Press `:` and a popup lists the command lines you run most, followed by every ot
 - History is shared between Neovim instances
 - Fuzzy argument completion for any command Neovim can complete (`:e`, `:set`, `:colorscheme`, `:h`, `:lua`, ...)
 - Arguments you used before come first
-- `<Tab>` and `<S-Tab>` work as usual in `/`, `?` and `input()` prompts
+- Search history for `/` and `?`, ranked and fuzzy filtered the same way
+- `<Tab>` and `<S-Tab>` work as usual in `input()` prompts
 - Auto width and a match counter
 - Highlight groups that follow your colorscheme
 - `:checkhealth wild`
@@ -63,6 +64,7 @@ require("wild").setup({
         previous_key = "<S-Tab>",
     },
     disable_cmdwin = true, -- turn off q:, q/, q? and <C-f> in the command line
+    search = true, -- show search history for / and ?
 })
 ```
 
@@ -85,17 +87,17 @@ vim.api.nvim_set_hl(0, "WildSelection", { fg = "#ff79c6", bold = true })
 
 ## Commands
 
-| Command             | Description              |
-| ------------------- | ------------------------ |
-| `:WildResetHistory` | Delete the saved history |
+| Command             | Description                                 |
+| ------------------- | ------------------------------------------- |
+| `:WildResetHistory` | Delete the saved command and search history |
 
 ## History
 
-Each command line you run from `:` is saved exactly as typed, so `:e foo.txt` and `:e bar.txt` are separate entries. Cancelled lines and invalid commands are not saved.
+Each command line you run from `:` is saved exactly as typed, so `:e foo.txt` and `:e bar.txt` are separate entries. Cancelled lines and invalid commands are not saved. Searches from `/` and `?` get their own history, saved the same way.
 
 Entries are ranked by frecency: each use counts 4× within the last hour, 2× within a day, 1× within a week and ¼× after that. Up to 1000 entries are kept, and every Neovim instance adds to the same file.
 
-History is saved to `stdpath("data")/command_history.json`.
+History is saved to `stdpath("data")/command_history.json` and `stdpath("data")/search_history.json`.
 
 ## Contributing
 

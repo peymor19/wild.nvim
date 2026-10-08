@@ -30,11 +30,11 @@ local function counter_text(selected, total)
     return string.format(" %d ", total)
 end
 
-function M.get_layout(lines)
+function M.get_layout(lines, fixed_width)
     local window = config.options.window
     local border = border_size()
     local height = math.max(math.min(#lines, window.height), 1)
-    local width = window.width
+    local width = fixed_width or window.width
 
     if width == "auto" then
         width = 1
@@ -57,16 +57,16 @@ function M.get_layout(lines)
     return { relative = "editor", width = width, height = height, row = math.max(row, 0), col = 0 }
 end
 
-local function apply_layout(win_id, buf_id)
+local function apply_layout(win_id, buf_id, fixed_width)
     local lines = vim.api.nvim_buf_get_lines(buf_id, 0, -1, false)
-    vim.api.nvim_win_set_config(win_id, M.get_layout(lines))
+    vim.api.nvim_win_set_config(win_id, M.get_layout(lines, fixed_width))
 end
 
-function M.create_window(lines)
+function M.create_window(lines, fixed_width)
     local buf_id = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
 
-    local win_config = M.get_layout(lines)
+    local win_config = M.get_layout(lines, fixed_width)
     win_config.style = "minimal"
     win_config.border = config.options.window.border
     win_config.zindex = 250
@@ -101,9 +101,9 @@ function M.close_window(win_id, buf_id)
     end
 end
 
-function M.resize_window(win_id, buf_id)
+function M.resize_window(win_id, buf_id, fixed_width)
     if win_id and vim.api.nvim_win_is_valid(win_id) then
-        apply_layout(win_id, buf_id)
+        apply_layout(win_id, buf_id, fixed_width)
     end
 end
 
@@ -111,12 +111,12 @@ function M.redraw()
     vim.cmd([[redraw]])
 end
 
-function M.update_buffer_contents(win_id, buf_id, data)
+function M.update_buffer_contents(win_id, buf_id, data, empty_text, fixed_width)
     if invalid_buffer(buf_id) then
         return
     end
 
-    local results = { "No Results" }
+    local results = { empty_text or "No Results" }
 
     if #data ~= 0 then
         results = vim.tbl_map(function(d)
@@ -125,7 +125,7 @@ function M.update_buffer_contents(win_id, buf_id, data)
     end
 
     vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, results)
-    apply_layout(win_id, buf_id)
+    apply_layout(win_id, buf_id, fixed_width)
     vim.api.nvim_win_set_cursor(win_id, { 1, 0 })
     M.highlight_chars(win_id, buf_id, data)
 end

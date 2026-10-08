@@ -12,17 +12,28 @@ local state = {
     buf_id = nil,
     history = {},
     commands = {},
+    search_history = {},
+    searches = {},
     help_tags = nil,
     candidates = {},
     match_count = 0,
     matches = {},
     selected = nil,
     prefix = "",
+    fixed_width = nil,
 }
 
 local function load_history()
+    local now = os.time()
+
     state.history = history.read(history.path)
-    state.commands = cmd.get_commands(state.history, os.time())
+    state.commands = cmd.get_commands(state.history, now)
+    state.search_history = history.read(history.search_path)
+    state.searches = history.lines(state.search_history, now)
+end
+
+local function is_search(cmdtype)
+    return (cmdtype == "/" or cmdtype == "?") and config.options.search
 end
 
 local function get_candidates(context)
@@ -39,17 +50,24 @@ local function get_candidates(context)
 end
 
 local function handle_cmdline_enter()
-    if vim.fn.getcmdtype() ~= ":" then
+    local cmdtype = vim.fn.getcmdtype()
+    local buf_data
+
+    if cmdtype == ":" then
+        buf_data = state.commands
+        state.fixed_width = nil
+    elseif is_search(cmdtype) then
+        buf_data = state.searches
+        state.fixed_width = ui.get_layout(state.commands).width
+    else
         return
     end
-
-    local buf_data = state.commands
 
     -- Deferred enters from back-to-back command lines (e.g. a mapping like
     -- `:w<CR>:echo<CR>`) can all run in the last one; replace, don't stack.
     ui.close_window(state.win_id, state.buf_id)
 
-    state.win_id, state.buf_id = ui.create_window(buf_data)
+    state.win_id, state.buf_id = ui.create_window(#buf_data > 0 and buf_data or { "No History" }, state.fixed_width)
     state.match_count = #buf_data
     state.matches = {}
     state.selected = nil
@@ -61,7 +79,9 @@ local function handle_cmdline_enter()
 end
 
 local function handle_cmdline_leave()
-    if vim.fn.getcmdtype() == ":" and not vim.v.event.abort then
+    local cmdtype = vim.fn.getcmdtype()
+
+    if cmdtype == ":" and not vim.v.event.abort then
         local line = vim.trim(vim.fn.getcmdline())
         local name = cmd.command_name(line)
 
@@ -69,6 +89,14 @@ local function handle_cmdline_leave()
             local now = os.time()
             state.history = history.record(history.path, line, now)
             state.commands = cmd.get_commands(state.history, now)
+        end
+    elseif is_search(cmdtype) and not vim.v.event.abort then
+        local line = vim.fn.getcmdline()
+
+        if line ~= "" then
+            local now = os.time()
+            state.search_history = history.record(history.search_path, line, now)
+            state.searches = history.lines(state.search_history, now)
         end
     end
 
@@ -79,13 +107,23 @@ local function handle_cmdline_leave()
 end
 
 local function handle_cmdline_changed()
-    if vim.fn.getcmdtype() ~= ":" then
+    if not (state.win_id and vim.api.nvim_win_is_valid(state.win_id)) then
         return
     end
 
+    local cmdtype = vim.fn.getcmdtype()
     local line = vim.fn.getcmdline()
-    local context = cmd.completion_context(line, vim.fn.getcmdcomplpat(), vim.fn.getcmdcompltype())
     local needle, items, prefix = line, state.commands, ""
+    local empty_text, context
+
+    if cmdtype == ":" then
+        context = cmd.completion_context(line, vim.fn.getcmdcomplpat(), vim.fn.getcmdcompltype())
+    elseif is_search(cmdtype) then
+        items = state.searches
+        empty_text = #items == 0 and "No History" or nil
+    else
+        return
+    end
 
     if context then
         local arguments = cmd.get_arguments(context.prefix, get_candidates(context), state.history)
@@ -97,7 +135,7 @@ local function handle_cmdline_changed()
 
     local matches = fzy.find_matches(needle, items)
 
-    ui.update_buffer_contents(state.win_id, state.buf_id, matches)
+    ui.update_buffer_contents(state.win_id, state.buf_id, matches, empty_text, state.fixed_width)
     ui.set_counter(state.win_id, nil, #matches)
     state.matches = matches
     ui.clear_selection(state.win_id)
@@ -129,7 +167,7 @@ end
 local function handle_vim_resized()
     if vim.fn.mode() == "c" then
         vim.defer_fn(function()
-            ui.resize_window(state.win_id, state.buf_id)
+            ui.resize_window(state.win_id, state.buf_id, state.fixed_width)
             ui.redraw()
         end, 100)
     end
@@ -216,8 +254,9 @@ end
 
 local function reset_history()
     os.remove(history.path)
+    os.remove(history.search_path)
     load_history()
-    vim.notify("wild.nvim: command history reset")
+    vim.notify("wild.nvim: command and search history reset")
 end
 
 local function setup_user_commands()

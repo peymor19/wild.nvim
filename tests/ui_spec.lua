@@ -47,6 +47,14 @@ describe("update_buffer_contents", function()
         assert.is_equal(1, #marks)
     end)
 
+    it("should show a placeholder when there are no results", function()
+        ui.update_buffer_contents(win_id, buf_id, {})
+        assert.are.same({ "No Results" }, vim.api.nvim_buf_get_lines(buf_id, 0, -1, false))
+
+        ui.update_buffer_contents(win_id, buf_id, {}, "No History")
+        assert.are.same({ "No History" }, vim.api.nvim_buf_get_lines(buf_id, 0, -1, false))
+    end)
+
     describe("with more results than fit in the window", function()
         local data = {}
         for i = 1, 50 do
@@ -140,6 +148,13 @@ describe("get_layout", function()
 
     it("should leave room for the counter when the width is auto", function()
         assert.is_equal(5, layout({ window = { width = "auto", counter = true } }, { "a" }).width)
+    end)
+
+    it("should use a fixed width instead of the configured one", function()
+        assert.is_equal(42, ui.get_layout(lines, 42).width)
+
+        config.setup({ window = { width = "auto" } })
+        assert.is_equal(42, ui.get_layout(lines, 42).width)
     end)
 
     it("should never be wider than the screen", function()

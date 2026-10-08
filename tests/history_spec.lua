@@ -44,6 +44,17 @@ describe("sort", function()
     end)
 end)
 
+describe("lines", function()
+    it("should return the lines ordered by frecency", function()
+        local entries = {
+            { line = "foo", count = 1, last_used = now },
+            { line = "bar", count = 5, last_used = now },
+        }
+
+        assert.are.same({ "bar", "foo" }, History.lines(entries, now))
+    end)
+end)
+
 describe("read and write", function()
     local path
 

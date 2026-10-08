@@ -23,15 +23,19 @@ end
 
 describe("checkhealth wild", function()
     local original_path = history.path
+    local original_search_path = history.search_path
 
     before_each(function()
         config.options = {}
         history.path = vim.fn.tempname()
+        history.search_path = vim.fn.tempname()
     end)
 
     after_each(function()
         os.remove(history.path)
+        os.remove(history.search_path)
         history.path = original_path
+        history.search_path = original_search_path
         pcall(vim.keymap.del, "c", "<C-n>")
     end)
 
@@ -51,7 +55,10 @@ describe("checkhealth wild", function()
     end)
 
     it("reports when there is no history file yet", function()
-        assert_contains(run_health(), "No history file yet")
+        local output = run_health()
+
+        assert_contains(output, "No command history file yet")
+        assert_contains(output, "No search history file yet")
     end)
 
     it("reports the number of commands in a valid history file", function()
@@ -61,6 +68,12 @@ describe("checkhealth wild", function()
         })
 
         assert_contains(run_health(), "OK 2 commands in history")
+    end)
+
+    it("reports the number of searches in a valid search history file", function()
+        history.write(history.search_path, { { line = "foo", count = 1, last_used = os.time() } })
+
+        assert_contains(run_health(), "OK 1 searches in history")
     end)
 
     it("errors when the history file is not valid JSON", function()

@@ -65,10 +65,7 @@ local function check_setup()
     end
 end
 
-local function check_history()
-    vim.health.start("wild.nvim: history")
-
-    local path = history.path
+local function check_history_file(path, name, plural)
     local dir = vim.fs.dirname(path)
 
     if vim.fn.isdirectory(dir) == 1 and vim.fn.filewritable(dir) ~= 2 then
@@ -76,17 +73,24 @@ local function check_history()
     end
 
     if not vim.uv.fs_stat(path) then
-        vim.health.info("No history file yet, it is created after your first command: " .. path)
+        vim.health.info("No " .. name .. " history file yet, it is created after your first " .. name .. ": " .. path)
         return
     end
 
     local ok, data = pcall(vim.json.decode, table.concat(vim.fn.readfile(path), "\n"))
 
     if ok and type(data) == "table" then
-        vim.health.ok(string.format("%d commands in history: %s", #data, path))
+        vim.health.ok(string.format("%d %s in history: %s", #data, plural, path))
     else
         vim.health.error("History file is not valid JSON: " .. path, "Run :WildResetHistory to start over")
     end
+end
+
+local function check_history()
+    vim.health.start("wild.nvim: history")
+
+    check_history_file(history.path, "command", "commands")
+    check_history_file(history.search_path, "search", "searches")
 end
 
 function M.check()
