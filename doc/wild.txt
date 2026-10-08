@@ -18,8 +18,9 @@ CONTENTS                                                       *wild-contents*
 
 wild.nvim shows a popup of Ex commands whenever you open the |cmdline| with
 `:`. Command lines you ran before are listed first, most frequent and recent
-at the top, and typing filters the list with fuzzy matching. Typing `:help`
-(or `:h`, `:he`, `:hel`) followed by a space searches help tags instead.
+at the top, and typing filters the list with fuzzy matching. After a space,
+the popup lists the command's arguments instead, such as files, options,
+colorschemes or help tags.
 
 ==============================================================================
 2. REQUIREMENTS                                            *wild-requirements*
@@ -59,11 +60,23 @@ selection and starts from the top. The keys can be changed with
 When the popup is not open, as in `/` and `?` searches or |input()| prompts,
 <Tab> and <S-Tab> keep their normal behavior.
 
-Help tags ~
-                                                              *wild-help-tags*
-When the command line starts with `h`, `he`, `hel` or `help` followed by a
-space, the popup lists help tags instead of commands. Selecting a tag puts
-`help {tag}` on the command line.
+Arguments ~
+                                                              *wild-arguments*
+After a command and a space, the popup lists everything Neovim can complete
+for that argument, fuzzy matched, for example:
+
+    `:e lua/wi`        files and directories
+    `:set tbstp`       options
+    `:colorscheme `    colorschemes
+    `:h buf_set`       help tags
+    `:lua vim.api.`    Lua functions and fields
+
+Arguments you used with the same command before are listed first, ranked by
+|wild-history|. Selecting an argument replaces only the argument, so the
+command and anything before it stay as typed.
+
+When the command has nothing to complete, the popup goes back to filtering
+your history with the whole line.
 
 ==============================================================================
 5. CONFIGURATION                                                 *wild-config*

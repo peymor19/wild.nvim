@@ -25,18 +25,6 @@ describe("close_window", function()
     end)
 end)
 
-describe("get_buf_data", function()
-    it("should return the names for the given searchable type", function()
-        local searchables = { commands = { { cmd = "edit", count = 1 }, { cmd = "echo", count = 0 } } }
-
-        assert.are.same({ "edit", "echo" }, ui.get_buf_data("commands", searchables))
-    end)
-
-    it("should return an empty list before searchables have loaded", function()
-        assert.are.same({}, ui.get_buf_data("commands", {}))
-    end)
-end)
-
 describe("update_buffer_contents", function()
     local chars_ns_id = vim.api.nvim_create_namespace("wild_highlight_characters")
     local win_id, buf_id

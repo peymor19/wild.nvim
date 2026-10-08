@@ -60,12 +60,6 @@ function M.create_window(buf_line_count)
     return win_id, buf_id
 end
 
-function M.get_buf_data(type, searchables)
-    return vim.tbl_map(function(item)
-        return item.cmd
-    end, searchables[type] or {})
-end
-
 function M.set_buffer_contents(buf_id, buf_data)
     vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, buf_data)
 end

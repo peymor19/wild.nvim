@@ -10,15 +10,31 @@ local M = {}
 local state = {
     win_id = nil,
     buf_id = nil,
-    searchables = {},
+    history = {},
+    commands = {},
+    help_tags = nil,
+    candidates = {},
     match_count = 0,
     selected = nil,
     prefix = "",
 }
 
-local function get_searchables()
-    local now = os.time()
-    return cmd.get_searchables(history.read(history.path), now)
+local function load_history()
+    state.history = history.read(history.path)
+    state.commands = cmd.get_commands(state.history, os.time())
+end
+
+local function get_candidates(context)
+    if context.type == "help" then
+        state.help_tags = state.help_tags or cmd.get_help_tags()
+        return state.help_tags
+    end
+
+    if not state.candidates[context.query] then
+        state.candidates[context.query] = vim.fn.getcompletion(context.query, "cmdline")
+    end
+
+    return state.candidates[context.query]
 end
 
 local function handle_cmdline_enter()
@@ -26,7 +42,7 @@ local function handle_cmdline_enter()
         return
     end
 
-    local buf_data = ui.get_buf_data("commands", state.searchables)
+    local buf_data = state.commands
 
     -- Deferred enters from back-to-back command lines (e.g. a mapping like
     -- `:w<CR>:echo<CR>`) can all run in the last one; replace, don't stack.
@@ -36,6 +52,7 @@ local function handle_cmdline_enter()
     state.match_count = #buf_data
     state.selected = nil
     state.prefix = ""
+    state.candidates = {}
 
     ui.set_buffer_contents(state.buf_id, buf_data)
     ui.redraw()
@@ -48,8 +65,8 @@ local function handle_cmdline_leave()
 
         if name and name ~= "" then
             local now = os.time()
-            local entries = history.record(history.path, line, now)
-            state.searchables.commands = cmd.get_commands(entries, now)
+            state.history = history.record(history.path, line, now)
+            state.commands = cmd.get_commands(state.history, now)
         end
     end
 
@@ -63,10 +80,19 @@ local function handle_cmdline_changed()
         return
     end
 
-    local input, searchable_type, prefix = cmd.searchable_type_from_input(vim.fn.getcmdline())
+    local line = vim.fn.getcmdline()
+    local context = cmd.completion_context(line, vim.fn.getcmdcomplpat(), vim.fn.getcmdcompltype())
+    local needle, items, prefix = line, state.commands, ""
 
-    local buf_data = ui.get_buf_data(searchable_type, state.searchables)
-    local matches = fzy.find_matches(input, buf_data)
+    if context then
+        local arguments = cmd.get_arguments(context.prefix, get_candidates(context), state.history)
+
+        if #arguments > 0 then
+            needle, items, prefix = context.needle, arguments, context.prefix
+        end
+    end
+
+    local matches = fzy.find_matches(needle, items)
 
     ui.update_buffer_contents(state.win_id, state.buf_id, matches)
     ui.clear_selection(state.win_id)
@@ -106,17 +132,15 @@ local function setup_global_autocmd()
     local group = vim.api.nvim_create_augroup("wild", { clear = true })
     local autocmd = vim.api.nvim_create_autocmd
 
-    local function load_searchables()
-        vim.defer_fn(function()
-            state.searchables = get_searchables()
-        end, 100)
+    local function load_history_later()
+        vim.defer_fn(load_history, 100)
     end
 
     -- When lazy-loaded, setup() can run after VimEnter has already fired.
     if vim.v.vim_did_enter == 1 then
-        load_searchables()
+        load_history_later()
     else
-        autocmd("VimEnter", { callback = load_searchables, group = group })
+        autocmd("VimEnter", { callback = load_history_later, group = group })
     end
 
     autocmd("CmdlineEnter", {
@@ -184,7 +208,7 @@ end
 
 local function reset_history()
     os.remove(history.path)
-    state.searchables = get_searchables()
+    load_history()
     vim.notify("wild.nvim: command history reset")
 end
 

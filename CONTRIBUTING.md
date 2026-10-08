@@ -39,10 +39,11 @@ CI runs the same checks against Neovim stable and nightly, so run `make check` b
 | ------------------------- | --------------------------------------------- |
 | `lua/wild/init.lua`       | `setup()`, autocmds, keymaps and plugin state |
 | `lua/wild/config.lua`     | Defaults, option types and validation         |
-| `lua/wild/cmd.lua`        | Commands, help tags and the history file      |
+| `lua/wild/cmd.lua`        | Commands, arguments and help tags             |
 | `lua/wild/ui.lua`         | The popup window                              |
 | `lua/wild/highlights.lua` | Highlight groups                              |
 | `lua/wild/fzy.lua`        | Fuzzy matching                                |
+| `lua/wild/history.lua`    | The history file and frecency ranking         |
 | `lua/wild/health.lua`     | `:checkhealth wild`                           |
 | `doc/wild.txt`            | `:h wild`                                     |
 | `tests/`                  | plenary busted tests (`*_spec.lua`)           |

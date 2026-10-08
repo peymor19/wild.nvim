@@ -2,7 +2,7 @@
 
 Fuzzy command-line completion for Neovim, ranked by your command history.
 
-Press `:` and a popup lists the command lines you run most, followed by every other Ex command. Type to fuzzy filter, press `<Tab>` to pick. Type `:h ` and it searches help tags instead.
+Press `:` and a popup lists the command lines you run most, followed by every other Ex command. Type to fuzzy filter, press `<Tab>` to pick. After a space it fuzzy completes the command's arguments: files, options, colorschemes, help tags and more.
 
 <!-- TODO: demo GIF -->
 
@@ -12,7 +12,8 @@ Press `:` and a popup lists the command lines you run most, followed by every ot
 - Fuzzy matching with [fzy](https://github.com/romgrk/fzy-lua-native), with the matched characters highlighted
 - Past command lines ranked by frecency (how often and how recently you ran them)
 - History is shared between Neovim instances
-- `:h`, `:he`, `:hel` and `:help` search help tags
+- Fuzzy argument completion for any command Neovim can complete (`:e`, `:set`, `:colorscheme`, `:h`, `:lua`, ...)
+- Arguments you used before come first
 - `<Tab>` and `<S-Tab>` work as usual in `/`, `?` and `input()` prompts
 - Highlight groups that follow your colorscheme
 - `:checkhealth wild`
