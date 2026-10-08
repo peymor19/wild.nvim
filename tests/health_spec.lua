@@ -3,7 +3,16 @@ local cmd = require("wild.cmd")
 
 local function run_health()
     vim.cmd("checkhealth wild")
-    local output = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
+    local buf = vim.api.nvim_get_current_buf()
+
+    assert.is_true(
+        vim.wait(5000, function()
+            return vim.bo[buf].filetype == "checkhealth"
+        end),
+        "checkhealth did not finish"
+    )
+
+    local output = table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), "\n")
     vim.cmd("bwipeout!")
     return output
 end
