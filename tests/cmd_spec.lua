@@ -129,7 +129,7 @@ describe("sort_by_usage", function()
 end)
 
 describe("to_file", function()
-    local file_path = vim.fn.stdpath("data") .. "/command_history_test.json"
+    local file_path = vim.fn.tempname()
 
     before_each(function()
         os.remove(file_path)
@@ -153,6 +153,20 @@ describe("to_file", function()
         assert.are.same(commands, results)
     end)
 
+    it("creates missing parent directories", function()
+        local dir = vim.fn.tempname()
+        local nested_path = dir .. "/nested/history.json"
+        local commands = { { cmd = "foo", count = 1 } }
+
+        Cmd.to_file(nested_path, commands)
+
+        local file = io.open(nested_path, "r")
+        assert.is_not_nil(file)
+        file:close()
+
+        vim.fn.delete(dir, "rf")
+    end)
+
     it("does not create a file when commands are empty", function()
         Cmd.to_file(file_path, {})
         assert.is_nil(io.open(file_path, "r"))
@@ -160,7 +174,7 @@ describe("to_file", function()
 end)
 
 describe("from_file", function()
-    local file_path = vim.fn.stdpath("data") .. "/command_history_test.json"
+    local file_path = vim.fn.tempname()
 
     before_each(function()
         os.remove(file_path)

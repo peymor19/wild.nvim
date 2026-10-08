@@ -112,6 +112,8 @@ function M.to_file(file_path, commands)
         return
     end
 
+    vim.fn.mkdir(vim.fs.dirname(file_path), "p")
+
     local file = io.open(file_path, "w")
     if file then
         file:write(vim.json.encode(commands))
