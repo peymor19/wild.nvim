@@ -1,15 +1,8 @@
 local config = require("wild.config")
-local cmd = require("wild.cmd")
 
 local M = {}
 
-M.state = {
-    current_buf_line = nil,
-    highlight_namespace = vim.api.nvim_create_namespace("Highlighter"),
-}
-
 local chars_ns_id = vim.api.nvim_create_namespace("wild_highlight_characters")
-local line_ns_id = vim.api.nvim_create_namespace("wild_highlight_line")
 
 local function invalid_buffer(buf_id)
     if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
@@ -57,7 +50,11 @@ function M.create_window(buf_line_count)
         zindex = 250,
     })
 
-    vim.api.nvim_set_option_value("winhighlight", "Normal:WildNormal,FloatBorder:WildBorder", { win = win_id })
+    vim.api.nvim_set_option_value(
+        "winhighlight",
+        "Normal:WildNormal,FloatBorder:WildBorder,CursorLine:WildSelection",
+        { win = win_id }
+    )
     vim.api.nvim_set_option_value("winblend", config.options.window.opacity, { win = win_id, scope = "local" })
 
     return win_id, buf_id
@@ -81,8 +78,6 @@ function M.close_window(win_id, buf_id)
     if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
         vim.api.nvim_buf_delete(buf_id, { force = true })
     end
-
-    M.reset_highlight()
 end
 
 function M.resize_window(win_id, buf_id)
@@ -132,69 +127,24 @@ function M.highlight_chars(buf_id, data)
     end
 end
 
-function M.set_command_line(buf_id, line_number)
+function M.set_command_line(buf_id, line_number, prefix)
     local command = vim.api.nvim_buf_get_lines(buf_id, line_number, line_number + 1, false)[1]
-    local input = vim.fn.getcmdline()
+    local eventignore = vim.o.eventignore
 
-    vim.o.eventignore = "CmdlineChanged"
-
-    if cmd.is_help(input) then
-        vim.fn.setcmdline("help " .. command)
-    else
-        vim.fn.setcmdline(command)
-    end
-
-    vim.o.eventignore = ""
+    vim.opt.eventignore:append("CmdlineChanged")
+    vim.fn.setcmdline(prefix .. command)
+    vim.o.eventignore = eventignore
 end
 
-function M.highlight_line(buf_id, line)
-    vim.api.nvim_buf_set_extmark(buf_id, line_ns_id, line, 0, {
-        hl_group = "WildSelection",
-        end_row = line + 1,
-        priority = 100,
-    })
-
-    M.redraw()
-
-    vim.api.nvim_buf_clear_namespace(buf_id, line_ns_id, 0, -1)
+function M.select_line(win_id, line_number)
+    vim.api.nvim_set_option_value("cursorline", true, { win = win_id })
+    vim.api.nvim_win_set_cursor(win_id, { line_number + 1, 0 })
 end
 
-local function has_results(buf_id)
-    local lines = vim.api.nvim_buf_get_lines(buf_id, 0, -1, false)
-
-    if #lines == 1 and lines[1] == "No Results" then
-        return false
-    else
-        return true
+function M.clear_selection(win_id)
+    if win_id and vim.api.nvim_win_is_valid(win_id) then
+        vim.api.nvim_set_option_value("cursorline", false, { win = win_id })
     end
-end
-
-function M.select_command(win_id, buf_id, offset)
-    local state = M.state
-
-    if not has_results(buf_id) then
-        return
-    end
-
-    local total_lines = vim.api.nvim_buf_line_count(buf_id)
-    if total_lines == 0 then
-        return
-    end
-
-    if state.current_buf_line == nil then
-        state.current_buf_line = 0
-    else
-        local delta = offset == 1 and 1 or -1
-        state.current_buf_line = (state.current_buf_line + delta) % total_lines
-    end
-
-    vim.api.nvim_win_set_cursor(win_id, { state.current_buf_line + 1, 0 })
-    M.highlight_line(buf_id, state.current_buf_line)
-    M.set_command_line(buf_id, state.current_buf_line)
-end
-
-function M.reset_highlight()
-    M.state.current_buf_line = nil
 end
 
 return M

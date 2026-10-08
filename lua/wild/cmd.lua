@@ -153,14 +153,11 @@ function M.is_help(input)
 end
 
 function M.searchable_type_from_input(input)
-    local type = "commands"
-
     if M.is_help(input) then
-        input = M.tail(input)
-        type = "help_tags"
+        return M.tail(input), "help_tags", "help "
     end
 
-    return input, type
+    return input, "commands", ""
 end
 
 function M.tail(command)

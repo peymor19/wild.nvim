@@ -59,3 +59,47 @@ describe("update_buffer_contents", function()
         assert.is_equal(1, #marks)
     end)
 end)
+
+describe("selection", function()
+    local win_id, buf_id
+
+    before_each(function()
+        config.setup()
+        win_id, buf_id = ui.create_window(3)
+        ui.set_buffer_contents(buf_id, { "edit", "echo", "enew" })
+    end)
+
+    after_each(function()
+        ui.close_window(win_id, buf_id)
+    end)
+
+    it("select_line should move the cursor and show the cursorline", function()
+        ui.select_line(win_id, 2)
+
+        assert.are.same({ 3, 0 }, vim.api.nvim_win_get_cursor(win_id))
+        assert.is_true(vim.api.nvim_get_option_value("cursorline", { win = win_id }))
+    end)
+
+    it("clear_selection should hide the cursorline", function()
+        ui.select_line(win_id, 1)
+        ui.clear_selection(win_id)
+
+        assert.is_false(vim.api.nvim_get_option_value("cursorline", { win = win_id }))
+    end)
+
+    it("clear_selection should not error when the window is gone", function()
+        ui.close_window(win_id, buf_id)
+
+        ui.clear_selection(win_id)
+        ui.clear_selection(nil)
+    end)
+
+    it("set_command_line should restore the previous eventignore", function()
+        vim.o.eventignore = "BufEnter"
+
+        ui.set_command_line(buf_id, 0, "")
+
+        assert.is_equal("BufEnter", vim.o.eventignore)
+        vim.o.eventignore = ""
+    end)
+end)

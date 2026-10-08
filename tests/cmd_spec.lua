@@ -226,16 +226,18 @@ end)
 
 describe("searchable_type_from_input", function()
     it("should search commands for plain input", function()
-        local input, type = Cmd.searchable_type_from_input("ed")
+        local input, type, prefix = Cmd.searchable_type_from_input("ed")
 
         assert.is_equal("ed", input)
         assert.is_equal("commands", type)
+        assert.is_equal("", prefix)
     end)
 
     it("should search help tags for help input", function()
-        local input, type = Cmd.searchable_type_from_input("h tags")
+        local input, type, prefix = Cmd.searchable_type_from_input("h tags")
 
         assert.is_equal("tags", input)
         assert.is_equal("help_tags", type)
+        assert.is_equal("help ", prefix)
     end)
 end)

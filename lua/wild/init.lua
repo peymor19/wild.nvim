@@ -6,10 +6,13 @@ local highlights = require("wild.highlights")
 
 local M = {}
 
-M.state = {
+local state = {
     win_id = nil,
     buf_id = nil,
     searchables = {},
+    match_count = 0,
+    selected = nil,
+    prefix = "",
 }
 
 local file_path = vim.fn.stdpath("data") .. "/command_history.json"
@@ -19,9 +22,9 @@ local function get_searchables()
     return cmd.get_searchables(commands_from_file)
 end
 
-local function handle_cmdline_enter(state)
+local function handle_cmdline_enter()
     if vim.fn.getcmdtype() ~= ":" then
-        return state
+        return
     end
 
     local buf_data = ui.get_buf_data("commands", state.searchables)
@@ -31,14 +34,15 @@ local function handle_cmdline_enter(state)
     ui.close_window(state.win_id, state.buf_id)
 
     state.win_id, state.buf_id = ui.create_window(#buf_data)
+    state.match_count = #buf_data
+    state.selected = nil
+    state.prefix = ""
 
     ui.set_buffer_contents(state.buf_id, buf_data)
     ui.redraw()
-
-    return state
 end
 
-local function handle_cmdline_leave(state)
+local function handle_cmdline_leave()
     if vim.fn.getcmdtype() == ":" and not vim.v.event.abort then
         local command = cmd.command_name(vim.fn.getcmdline())
         local updated_commands = cmd.inc_command(command, state.searchables.commands)
@@ -48,27 +52,46 @@ local function handle_cmdline_leave(state)
     end
 
     ui.close_window(state.win_id, state.buf_id)
-
-    return state
+    state.match_count = 0
+    state.selected = nil
 end
 
-local function handle_cmdline_changed(state)
+local function handle_cmdline_changed()
     if vim.fn.getcmdtype() ~= ":" then
-        return state
+        return
     end
 
-    local input, searchable_type = cmd.searchable_type_from_input(vim.fn.getcmdline())
+    local input, searchable_type, prefix = cmd.searchable_type_from_input(vim.fn.getcmdline())
 
     local buf_data = ui.get_buf_data(searchable_type, state.searchables)
     local matches = fzy.find_matches(input, buf_data)
 
     ui.update_buffer_contents(state.win_id, state.buf_id, matches)
-    ui.redraw()
+    ui.clear_selection(state.win_id)
+    state.match_count = #matches
+    state.selected = nil
+    state.prefix = prefix
 
-    return state
+    ui.redraw()
 end
 
-local function handle_vim_resized(state)
+local function select(offset)
+    if state.match_count == 0 then
+        return
+    end
+
+    if state.selected == nil then
+        state.selected = 0
+    else
+        state.selected = (state.selected + offset) % state.match_count
+    end
+
+    ui.select_line(state.win_id, state.selected)
+    ui.set_command_line(state.buf_id, state.selected, state.prefix)
+    ui.redraw()
+end
+
+local function handle_vim_resized()
     if vim.fn.mode() == "c" then
         vim.defer_fn(function()
             ui.resize_window(state.win_id, state.buf_id)
@@ -83,7 +106,7 @@ local function setup_global_autocmd()
 
     local function load_searchables()
         vim.defer_fn(function()
-            M.state.searchables = get_searchables()
+            state.searchables = get_searchables()
         end, 100)
     end
 
@@ -97,7 +120,7 @@ local function setup_global_autocmd()
     autocmd("CmdlineEnter", {
         callback = function()
             vim.defer_fn(function()
-                M.state = handle_cmdline_enter(M.state)
+                handle_cmdline_enter()
             end, 10)
         end,
         group = group,
@@ -105,7 +128,7 @@ local function setup_global_autocmd()
 
     autocmd("CmdlineLeave", {
         callback = function()
-            M.state = handle_cmdline_leave(M.state)
+            handle_cmdline_leave()
         end,
         group = group,
     })
@@ -113,7 +136,7 @@ local function setup_global_autocmd()
     autocmd("CmdlineChanged", {
         callback = function()
             vim.defer_fn(function()
-                M.state = handle_cmdline_changed(M.state)
+                handle_cmdline_changed()
             end, 10)
         end,
         group = group,
@@ -123,7 +146,7 @@ local function setup_global_autocmd()
 
     autocmd("VimResized", {
         callback = function()
-            handle_vim_resized(M.state)
+            handle_vim_resized()
         end,
         group = group,
     })
@@ -133,8 +156,8 @@ end
 -- as if typed, so builtin completion still works in /, ?, input(), etc.
 local function select_or_fallback(key, offset)
     return function()
-        if M.state.win_id and vim.api.nvim_win_is_valid(M.state.win_id) then
-            ui.select_command(M.state.win_id, M.state.buf_id, offset)
+        if state.win_id and vim.api.nvim_win_is_valid(state.win_id) then
+            select(offset)
         else
             local keys = vim.api.nvim_replace_termcodes(key, true, false, true)
             vim.api.nvim_feedkeys(keys, "nti", false)
