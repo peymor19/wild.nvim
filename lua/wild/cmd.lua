@@ -1,5 +1,7 @@
 local M = {}
 
+M.history_path = vim.fn.stdpath("data") .. "/command_history.json"
+
 function M.get_searchables(commands_from_file)
     local vim_commands = M.get_vim_commands()
 

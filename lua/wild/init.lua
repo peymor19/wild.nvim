@@ -15,7 +15,7 @@ local state = {
     prefix = "",
 }
 
-local file_path = vim.fn.stdpath("data") .. "/command_history.json"
+local file_path = cmd.history_path
 
 local function get_searchables()
     local commands_from_file = cmd.from_file(file_path)
