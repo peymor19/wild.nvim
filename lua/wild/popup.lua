@@ -1,6 +1,7 @@
 local ui = require("wild.ui")
 local fzy = require("wild.fzy")
 local cmd = require("wild.cmd")
+local completion = require("wild.completion")
 local history = require("wild.history")
 local config = require("wild.config")
 
@@ -37,7 +38,7 @@ end
 
 local function get_candidates(context)
     if context.type == "help" then
-        state.help_tags = state.help_tags or cmd.get_help_tags()
+        state.help_tags = state.help_tags or completion.get_help_tags()
         return state.help_tags
     end
 
@@ -116,7 +117,7 @@ function M.handle_cmdline_changed()
     local empty_text, context
 
     if cmdtype == ":" then
-        context = cmd.completion_context(line, vim.fn.getcmdcomplpat(), vim.fn.getcmdcompltype())
+        context = completion.completion_context(line, vim.fn.getcmdcomplpat(), vim.fn.getcmdcompltype())
     elseif is_search(cmdtype) then
         items = state.searches
         empty_text = #items == 0 and "No History" or nil
@@ -125,7 +126,7 @@ function M.handle_cmdline_changed()
     end
 
     if context then
-        local arguments = cmd.get_arguments(context.prefix, get_candidates(context), state.history)
+        local arguments = completion.get_arguments(context.prefix, get_candidates(context), state.history)
 
         if #arguments > 0 then
             needle, items, prefix = context.needle, arguments, context.prefix
