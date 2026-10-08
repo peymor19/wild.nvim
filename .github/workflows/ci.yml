@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rev: [v0.10.4, stable, nightly]
+        rev: [stable, nightly]
     steps:
       - uses: actions/checkout@v4
 

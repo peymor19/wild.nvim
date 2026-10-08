@@ -169,25 +169,38 @@ local function setup_keymaps()
     local next_key = config.options.keymaps.next_key
     local previous_key = config.options.keymaps.previous_key
 
-    vim.api.nvim_set_keymap("c", next_key, "", { callback = select_or_fallback(next_key, 1), noremap = true })
-    vim.api.nvim_set_keymap("c", previous_key, "", { callback = select_or_fallback(previous_key, -1), noremap = true })
-    -- vim.api.nvim_create_user_command("WildResetHistory", function() cmd:resethistory() end, {desc = "Resets command history" })
+    vim.keymap.set("c", next_key, select_or_fallback(next_key, 1), { desc = "wild: select next" })
+    vim.keymap.set("c", previous_key, select_or_fallback(previous_key, -1), { desc = "wild: select previous" })
 end
 
-local function disable_nvim_builtin_cmd_history()
-    vim.api.nvim_set_keymap("c", "<C-f>", "<Nop>", { noremap = true, silent = true })
-    vim.api.nvim_set_keymap("n", "q:", "<Nop>", { noremap = true, silent = true })
-    vim.api.nvim_set_keymap("n", "q/", "<Nop>", { noremap = true, silent = true })
-    vim.api.nvim_set_keymap("n", "q?", "<Nop>", { noremap = true, silent = true })
+local function disable_cmdwin()
+    vim.keymap.set("c", "<C-f>", "<Nop>", { desc = "wild: cmdwin disabled" })
+    vim.keymap.set("n", "q:", "<Nop>", { desc = "wild: cmdwin disabled" })
+    vim.keymap.set("n", "q/", "<Nop>", { desc = "wild: cmdwin disabled" })
+    vim.keymap.set("n", "q?", "<Nop>", { desc = "wild: cmdwin disabled" })
+end
+
+local function reset_history()
+    os.remove(file_path)
+    state.searchables = get_searchables()
+    vim.notify("wild.nvim: command history reset")
+end
+
+local function setup_user_commands()
+    vim.api.nvim_create_user_command("WildResetHistory", reset_history, { desc = "Reset wild.nvim command history" })
 end
 
 function M.setup(opts)
     config.setup(opts)
     highlights.setup()
 
-    disable_nvim_builtin_cmd_history()
+    if config.options.disable_cmdwin then
+        disable_cmdwin()
+    end
+
     setup_global_autocmd()
     setup_keymaps()
+    setup_user_commands()
 end
 
 return M
