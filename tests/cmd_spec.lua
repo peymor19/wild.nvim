@@ -38,44 +38,6 @@ describe("command_name", function()
     end)
 end)
 
-describe("in_list", function()
-    it("should return true with command input matching a command in list", function()
-        local commands = { { cmd = "foo", count = 1 }, { cmd = "bar", count = 10 }, { cmd = "baz", count = 5 } }
-
-        local result = Cmd.in_list("foo", commands)
-
-        assert.truthy(result)
-    end)
-
-    it("should return false with command input not matching a command in list", function()
-        local commands = { { cmd = "foo", count = 1 }, { cmd = "bar", count = 10 }, { cmd = "baz", count = 5 } }
-
-        local result = Cmd.in_list("foobar", commands)
-
-        assert.falsy(result)
-    end)
-
-    it("should return false with input that is only a substring of a command", function()
-        local commands = { { cmd = "echo", count = 1 } }
-
-        assert.falsy(Cmd.in_list("ec", commands))
-    end)
-
-    it("should return false with empty input", function()
-        local commands = { { cmd = "echo", count = 1 } }
-
-        assert.falsy(Cmd.in_list("", commands))
-    end)
-
-    it("should not error on input containing lua pattern characters", function()
-        local commands = { { cmd = "echo", count = 1 } }
-
-        for _, input in ipairs({ "echo(", "%", "e[" }) do
-            assert.falsy(Cmd.in_list(input, commands))
-        end
-    end)
-end)
-
 describe("inc_command", function()
     it("should increment a commands usage count with matching command", function()
         local commands = {
@@ -113,6 +75,55 @@ describe("inc_command", function()
         local result = Cmd.inc_command("ec", commands)
 
         assert.are.same({ { cmd = "echo", count = 1 } }, result)
+    end)
+
+    it("should move a command up when it passes another in usage", function()
+        local commands = { { cmd = "bar", count = 2 }, { cmd = "foo", count = 2 } }
+
+        local result = Cmd.inc_command("foo", commands)
+
+        assert.are.same({ { cmd = "foo", count = 3 }, { cmd = "bar", count = 2 } }, result)
+    end)
+
+    it("should ignore empty and invalid commands", function()
+        local commands = { { cmd = "echo", count = 1 } }
+
+        assert.are.same({ { cmd = "echo", count = 1 } }, Cmd.inc_command("", commands))
+        assert.are.same({ { cmd = "echo", count = 1 } }, Cmd.inc_command(nil, commands))
+    end)
+
+    it("should not error on input containing lua pattern characters", function()
+        local commands = { { cmd = "echo", count = 1 } }
+
+        for _, input in ipairs({ "echo(", "%", "e[" }) do
+            assert.are.same({ { cmd = "echo", count = 1 } }, Cmd.inc_command(input, commands))
+        end
+    end)
+end)
+
+describe("get_help_tags", function()
+    it("should return tag names from the runtime help files", function()
+        local tags = Cmd.get_help_tags()
+        local names = vim.tbl_map(function(item)
+            return item.cmd
+        end, tags)
+
+        assert.is_true(vim.tbl_contains(names, "help"))
+        assert.is_false(vim.tbl_contains(names, "!_TAG_FILE_ENCODING"))
+    end)
+end)
+
+describe("is_help", function()
+    it("should match every abbreviation of help followed by a space", function()
+        for _, input in ipairs({ "h ", "he tags", "hel x", "help options" }) do
+            assert.is_true(Cmd.is_help(input), input)
+        end
+    end)
+
+    it("should not match other commands or help without an argument", function()
+        for _, input in ipairs({ "help", "hi Normal", "helpgrep foo", "edit h ", "" }) do
+            assert.is_false(Cmd.is_help(input), input)
+        end
     end)
 end)
 
@@ -165,6 +176,12 @@ describe("to_file", function()
         file:close()
 
         vim.fn.delete(dir, "rf")
+    end)
+
+    it("only writes commands that have been used", function()
+        Cmd.to_file(file_path, { { cmd = "foo", count = 2 }, { cmd = "bar", count = 0 } })
+
+        assert.are.same({ { cmd = "foo", count = 2 } }, Cmd.from_file(file_path))
     end)
 
     it("does not create a file when commands are empty", function()

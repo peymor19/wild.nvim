@@ -35,25 +35,12 @@ function M.get_vim_commands()
 end
 
 function M.get_help_tags()
-    local runtimepath = vim.o.runtimepath
-    local paths = vim.split(runtimepath, ",")
     local help_tags = {}
 
-    for _, path in ipairs(paths) do
-        local doc_path = path .. "/doc"
-
-        if vim.fn.isdirectory(doc_path) == 1 then
-            local files = vim.fn.globpath(doc_path, "tags", false, true)
-
-            for _, file in ipairs(files) do
-                local lines = vim.fn.readfile(file)
-
-                for _, line in ipairs(lines) do
-                    if not line:match("^!_TAG_") then
-                        local fields = vim.split(line, "\t", { trimempty = true })
-                        table.insert(help_tags, { cmd = fields[1] })
-                    end
-                end
+    for _, file in ipairs(vim.api.nvim_get_runtime_file("doc/tags", true)) do
+        for _, line in ipairs(vim.fn.readfile(file)) do
+            if not line:match("^!_TAG_") then
+                table.insert(help_tags, { cmd = line:match("^[^\t]+") })
             end
         end
     end
@@ -73,26 +60,11 @@ function M.command_name(command_line)
     return parsed.cmd
 end
 
-function M.in_list(input, commands)
-    for _, item in ipairs(commands) do
-        if item.cmd == input then
-            return true
-        end
-    end
-
-    return false
-end
-
 function M.inc_command(command, commands)
-    if not M.in_list(command, commands) then
-        return commands
-    end
-
     for _, item in ipairs(commands) do
         if item.cmd == command then
             item.count = item.count + 1
-            commands = M.sort_by_usage(commands)
-            return commands
+            return M.sort_by_usage(commands)
         end
     end
 
@@ -112,11 +84,15 @@ function M.to_file(file_path, commands)
         return
     end
 
+    local used = vim.tbl_filter(function(item)
+        return item.count > 0
+    end, commands)
+
     vim.fn.mkdir(vim.fs.dirname(file_path), "p")
 
     local file = io.open(file_path, "w")
     if file then
-        file:write(vim.json.encode(commands))
+        file:write(vim.json.encode(used))
         file:close()
     end
 end
@@ -140,16 +116,8 @@ function M.from_file(file_path)
 end
 
 function M.is_help(input)
-    local valid_prefixes = { "h ", "he ", "hel ", "help " }
-    local is_help = false
-
-    for _, prefix in ipairs(valid_prefixes) do
-        if string.sub(input, 1, #prefix) == prefix then
-            is_help = true
-        end
-    end
-
-    return is_help
+    local name = input:match("^(%a+) ")
+    return name ~= nil and vim.startswith("help", name)
 end
 
 function M.searchable_type_from_input(input)
