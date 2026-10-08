@@ -2,6 +2,7 @@ local ui = require("wild.ui")
 local fzy = require("wild.fzy")
 local cmd = require("wild.cmd")
 local config = require("wild.config")
+local highlights = require("wild.highlights")
 
 local M = {}
 
@@ -118,6 +119,8 @@ local function setup_global_autocmd()
         group = group,
     })
 
+    autocmd("ColorScheme", { callback = highlights.setup, group = group })
+
     autocmd("VimResized", {
         callback = function()
             handle_vim_resized(M.state)
@@ -157,6 +160,7 @@ end
 
 function M.setup(opts)
     config.setup(opts)
+    highlights.setup()
 
     disable_nvim_builtin_cmd_history()
     setup_global_autocmd()

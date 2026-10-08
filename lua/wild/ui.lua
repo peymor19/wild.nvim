@@ -57,10 +57,7 @@ function M.create_window(buf_line_count)
         zindex = 250,
     })
 
-    vim.api.nvim_set_hl(0, "WildWindowBackground", config.options.window.background_hl)
-    vim.api.nvim_set_hl(0, "WildFloatBorder", config.options.window.border_hl)
-    vim.api.nvim_win_set_option(win_id, "winhighlight", "Normal:WildWindowBackground,FloatBorder:WildFloatBorder")
-
+    vim.api.nvim_set_option_value("winhighlight", "Normal:WildNormal,FloatBorder:WildBorder", { win = win_id })
     vim.api.nvim_set_option_value("winblend", config.options.window.opacity, { win = win_id, scope = "local" })
 
     return win_id, buf_id
@@ -119,12 +116,6 @@ function M.update_buffer_contents(win_id, buf_id, data)
 end
 
 function M.highlight_chars(buf_id, data)
-    vim.api.nvim_set_hl(0, "highlight_charaters", {
-        fg = config.options.highlights.character_color,
-        bg = config.options.window.color,
-        bold = true,
-    })
-
     vim.api.nvim_buf_clear_namespace(buf_id, chars_ns_id, 0, -1)
 
     for line_idx, item in ipairs(data) do
@@ -132,7 +123,7 @@ function M.highlight_chars(buf_id, data)
         for _, pos in ipairs(positions) do
             local char = str:sub(pos, pos)
             vim.api.nvim_buf_set_extmark(buf_id, chars_ns_id, line_idx - 1, pos - 1, {
-                virt_text = { { char, "highlight_charaters" } },
+                virt_text = { { char, "WildMatch" } },
                 virt_text_pos = "overlay",
                 hl_mode = "combine",
                 priority = 99,
@@ -157,14 +148,8 @@ function M.set_command_line(buf_id, line_number)
 end
 
 function M.highlight_line(buf_id, line)
-    vim.api.nvim_set_hl(0, "line_highlight", {
-        fg = config.options.highlights.line_color,
-        bg = config.options.window.color,
-        bold = true,
-    })
-
     vim.api.nvim_buf_set_extmark(buf_id, line_ns_id, line, 0, {
-        hl_group = "line_highlight",
+        hl_group = "WildSelection",
         end_row = line + 1,
         priority = 100,
     })

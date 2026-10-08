@@ -1,16 +1,13 @@
 local M = {}
 
-local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal" })
-local border_hl = vim.api.nvim_get_hl(0, { name = "FloatBorder" })
-
 M.defaults = {
     window = {
         width = 30,
         height = 10,
         border = "rounded",
         opacity = 0,
-        background_hl = normal_hl,
-        border_hl = border_hl,
+        background_hl = nil,
+        border_hl = nil,
     },
     highlights = {
         line_color = "#FFA500",
