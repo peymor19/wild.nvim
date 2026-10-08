@@ -1,0 +1,192 @@
+*wild.txt*  Fuzzy command-line completion ordered by how often you use it
+
+==============================================================================
+CONTENTS                                                       *wild-contents*
+
+  1. Introduction ........................................ |wild-introduction|
+  2. Requirements ........................................ |wild-requirements|
+  3. Installation ........................................ |wild-installation|
+  4. Usage ............................................... |wild-usage|
+  5. Configuration ....................................... |wild-config|
+  6. Commands ............................................ |wild-commands|
+  7. Highlights .......................................... |wild-highlights|
+  8. History ............................................. |wild-history|
+  9. Health .............................................. |wild-health|
+
+==============================================================================
+1. INTRODUCTION                                            *wild-introduction*
+
+wild.nvim shows a popup of Ex commands whenever you open the |cmdline| with
+`:`. Commands you run most often are listed first, and typing filters the list
+with fuzzy matching. Typing `:help` (or `:h`, `:he`, `:hel`) followed by a
+space searches help tags instead.
+
+==============================================================================
+2. REQUIREMENTS                                            *wild-requirements*
+
+- Neovim 0.12 or newer
+- romgrk/fzy-lua-native: https://github.com/romgrk/fzy-lua-native
+
+==============================================================================
+3. INSTALLATION                                            *wild-installation*
+
+With lazy.nvim: >lua
+    {
+        "peymor19/wild.nvim",
+        dependencies = { "romgrk/fzy-lua-native" },
+        config = function()
+            require("wild").setup()
+        end,
+    }
+<
+
+==============================================================================
+4. USAGE                                                          *wild-usage*
+
+Press `:` to open the command line. The popup lists every Ex command, most
+used first.
+
+Type to fuzzy filter the list. Matched characters are highlighted with
+|hl-WildMatch|.
+
+<Tab>        Select the next match and put it on the command line.
+<S-Tab>      Select the previous match and put it on the command line.
+
+Both keys wrap around at the ends of the list. Typing again clears the
+selection and starts from the top. The keys can be changed with
+|wild-config-keymaps|.
+
+When the popup is not open, as in `/` and `?` searches or |input()| prompts,
+<Tab> and <S-Tab> keep their normal behavior.
+
+Help tags ~
+                                                              *wild-help-tags*
+When the command line starts with `h`, `he`, `hel` or `help` followed by a
+space, the popup lists help tags instead of commands. Selecting a tag puts
+`help {tag}` on the command line.
+
+==============================================================================
+5. CONFIGURATION                                                 *wild-config*
+
+                                                                *wild.setup()*
+setup({opts})
+    Enables the plugin. Every option is optional, and anything left out uses
+    the default below. An option with the wrong type raises an error.
+
+Default configuration: >lua
+    require("wild").setup({
+        window = {
+            width = 30,
+            height = 10,
+            border = "rounded",
+            opacity = 0,
+            background_hl = nil,
+            border_hl = nil,
+        },
+        highlights = {
+            line_color = "#FFA500",
+            character_color = "#6495ED",
+        },
+        keymaps = {
+            next_key = "<Tab>",
+            previous_key = "<S-Tab>",
+        },
+        disable_cmdwin = true,
+    })
+<
+
+                                                          *wild-config-window*
+window.width ~
+    Width of the popup in columns.
+
+window.height ~
+    Maximum number of rows shown. The popup shrinks to fit fewer matches.
+
+window.border ~
+    Border style, any value accepted by the `border` option of
+    |nvim_open_win()|, such as "rounded", "single" or "none".
+
+window.opacity ~
+    Transparency of the popup from 0 (opaque) to 100. See 'winblend'.
+
+window.background_hl ~
+    Highlight attributes for |hl-WildNormal|, as accepted by |nvim_set_hl()|.
+    When unset, the popup background links to |hl-Normal|.
+
+window.border_hl ~
+    Highlight attributes for |hl-WildBorder|, as accepted by |nvim_set_hl()|.
+    When unset, the border links to |hl-FloatBorder|.
+
+                                                      *wild-config-highlights*
+highlights.line_color ~
+    Foreground color of the selected line, see |hl-WildSelection|.
+
+highlights.character_color ~
+    Foreground color of matched characters, see |hl-WildMatch|.
+
+                                                         *wild-config-keymaps*
+keymaps.next_key ~
+    Key that selects the next match.
+
+keymaps.previous_key ~
+    Key that selects the previous match.
+
+                                                  *wild-config-disable_cmdwin*
+disable_cmdwin ~
+    When true, `q:`, `q/`, `q?` and command-line <C-f> do nothing instead of
+    opening the |cmdwin|. Set to false to keep the command-line window.
+
+==============================================================================
+6. COMMANDS                                                    *wild-commands*
+
+                                                           *:WildResetHistory*
+:WildResetHistory
+    Delete the saved history so every command is back to zero uses. See
+    |wild-history|.
+
+==============================================================================
+7. HIGHLIGHTS                                                *wild-highlights*
+
+The popup uses these highlight groups. They are set as defaults, so a
+colorscheme or your own |nvim_set_hl()| call takes precedence, and they are
+restored after you change colorscheme.
+
+                                                              *hl-WildNormal*
+WildNormal          Popup background. Links to |hl-Normal|.
+
+                                                              *hl-WildBorder*
+WildBorder          Popup border. Links to |hl-FloatBorder|.
+
+                                                               *hl-WildMatch*
+WildMatch           Characters that match what you typed.
+
+                                                           *hl-WildSelection*
+WildSelection       The selected line.
+
+Example: >lua
+    vim.api.nvim_set_hl(0, "WildSelection", { fg = "#ff79c6", bold = true })
+<
+
+==============================================================================
+8. HISTORY                                                      *wild-history*
+
+Each time you run a command from `:`, its use count goes up by one. Counts are
+kept per command, not per command line, so `:e foo.txt` and `:edit bar.txt`
+both count toward `edit`. Cancelled command lines are not counted.
+
+History is saved as JSON in: >
+    stdpath("data")/command_history.json
+<
+Use |:WildResetHistory| to start over.
+
+==============================================================================
+9. HEALTH                                                        *wild-health*
+
+Run `:checkhealth wild` to check that:
+
+- Neovim is new enough and fzy-lua-native can be loaded
+- |wild.setup()| has been called
+- the selection keys are not mapped by another plugin
+- the history file can be written and is valid JSON
+
+ vim:tw=78:ts=8:noet:ft=help:norl:
