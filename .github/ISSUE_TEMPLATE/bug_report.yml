@@ -1,0 +1,92 @@
+name: Bug report
+description: Something in wild.nvim is not working
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please check the [existing issues](https://github.com/peymor19/wild.nvim/issues) first.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What went wrong?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Run Neovim with the minimal config below and list the keys you press.
+      placeholder: |
+        1. nvim -u repro.lua
+        2. Press `:`
+        3. Type `wri`
+        4. Press `<Tab>`
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include any error messages. Screenshots help for display problems.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Neovim version
+      description: Output of `nvim --version | head -1`
+      placeholder: NVIM v0.12.0
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: macOS 15, Ubuntu 24.04, Windows 11
+    validations:
+      required: true
+
+  - type: textarea
+    id: health
+    attributes:
+      label: Health check
+      description: Output of `:checkhealth wild`
+      render: markdown
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal config
+      description: A config that reproduces the bug with `nvim -u repro.lua`. Edit the `setup()` call if your options matter.
+      render: lua
+      value: |
+        vim.env.LAZY_STDPATH = ".repro"
+        load(vim.fn.system("curl -s https://raw.githubusercontent.com/folke/lazy.nvim/main/bootstrap.lua"))()
+
+        require("lazy.minit").repro({
+            spec = {
+                {
+                    "peymor19/wild.nvim",
+                    dependencies = { "romgrk/fzy-lua-native" },
+                    config = function()
+                        require("wild").setup()
+                    end,
+                },
+            },
+        })
+    validations:
+      required: true
