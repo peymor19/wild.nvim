@@ -1,5 +1,5 @@
-local config = require "config"
-local ui = require "ui"
+local config = require "wild.config"
+local ui = require "wild.ui"
 
 describe("close_window", function()
     before_each(function()

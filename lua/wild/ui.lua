@@ -1,5 +1,5 @@
-local config = require("config")
-local cmd = require("cmd")
+local config = require("wild.config")
+local cmd = require("wild.cmd")
 
 local M = {}
 

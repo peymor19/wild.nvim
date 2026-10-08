@@ -1,7 +1,7 @@
-local ui = require("ui")
-local fzy = require("fzy")
-local cmd = require("cmd")
-local config = require("config")
+local ui = require("wild.ui")
+local fzy = require("wild.fzy")
+local cmd = require("wild.cmd")
+local config = require("wild.config")
 
 local M = {}
 

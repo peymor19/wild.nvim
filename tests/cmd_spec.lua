@@ -1,4 +1,4 @@
-local Cmd = require "cmd"
+local Cmd = require "wild.cmd"
 
 describe("get_searchables", function()
     it("should return a list searchable items", function()
