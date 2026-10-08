@@ -10,22 +10,22 @@ M.defaults = {
         border = "rounded",
         opacity = 0,
         background_hl = normal_hl,
-        border_hl = border_hl
+        border_hl = border_hl,
     },
     highlights = {
         line_color = "#FFA500",
-        character_color = "#6495ED"
+        character_color = "#6495ED",
     },
     keymaps = {
         next_key = "<Tab>",
-        previous_key = "<S-Tab>"
-    }
+        previous_key = "<S-Tab>",
+    },
 }
 
 M.options = {}
 
 function M.setup(options)
-    M.options = vim.tbl_deep_extend('force', {}, M.defaults, options or {})
+    M.options = vim.tbl_deep_extend("force", {}, M.defaults, options or {})
 end
 
 return M

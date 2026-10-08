@@ -8,10 +8,10 @@ local M = {}
 M.state = {
     win_id = nil,
     buf_id = nil,
-    searchables = {}
+    searchables = {},
 }
 
-local file_path = vim.fn.stdpath('data') .. '/command_history.json'
+local file_path = vim.fn.stdpath("data") .. "/command_history.json"
 
 local function get_searchables()
     local commands_from_file = cmd.from_file(file_path)
@@ -19,7 +19,9 @@ local function get_searchables()
 end
 
 local function handle_cmdline_enter(state)
-    if vim.fn.getcmdtype() ~= ":" then return state end
+    if vim.fn.getcmdtype() ~= ":" then
+        return state
+    end
 
     local buf_data = ui.get_buf_data("commands", state.searchables)
 
@@ -50,7 +52,9 @@ local function handle_cmdline_leave(state)
 end
 
 local function handle_cmdline_changed(state)
-    if vim.fn.getcmdtype() ~= ":" then return state end
+    if vim.fn.getcmdtype() ~= ":" then
+        return state
+    end
 
     local input, searchable_type = cmd.searchable_type_from_input(vim.fn.getcmdline())
 
@@ -86,28 +90,40 @@ local function setup_global_autocmd()
     if vim.v.vim_did_enter == 1 then
         load_searchables()
     else
-        autocmd('VimEnter', { callback = load_searchables, group = group })
+        autocmd("VimEnter", { callback = load_searchables, group = group })
     end
 
-    autocmd("CmdlineEnter", { callback = function()
-        vim.defer_fn(function()
-            M.state = handle_cmdline_enter(M.state)
-        end, 10)
-    end, group = group })
+    autocmd("CmdlineEnter", {
+        callback = function()
+            vim.defer_fn(function()
+                M.state = handle_cmdline_enter(M.state)
+            end, 10)
+        end,
+        group = group,
+    })
 
-    autocmd("CmdlineLeave", { callback = function()
-        M.state = handle_cmdline_leave(M.state)
-    end, group = group })
+    autocmd("CmdlineLeave", {
+        callback = function()
+            M.state = handle_cmdline_leave(M.state)
+        end,
+        group = group,
+    })
 
-    autocmd("CmdlineChanged", { callback = function()
-        vim.defer_fn(function()
-            M.state = handle_cmdline_changed(M.state)
-        end, 10)
-    end, group = group })
+    autocmd("CmdlineChanged", {
+        callback = function()
+            vim.defer_fn(function()
+                M.state = handle_cmdline_changed(M.state)
+            end, 10)
+        end,
+        group = group,
+    })
 
-    autocmd("VimResized", { callback = function()
-        handle_vim_resized(M.state)
-    end, group = group })
+    autocmd("VimResized", {
+        callback = function()
+            handle_vim_resized(M.state)
+        end,
+        group = group,
+    })
 end
 
 -- Selects from the wild window when it is open; otherwise sends the key on
@@ -127,16 +143,16 @@ local function setup_keymaps()
     local next_key = config.options.keymaps.next_key
     local previous_key = config.options.keymaps.previous_key
 
-    vim.api.nvim_set_keymap('c', next_key, "", { callback = select_or_fallback(next_key, 1), noremap = true })
-    vim.api.nvim_set_keymap('c', previous_key, "", { callback = select_or_fallback(previous_key, -1), noremap = true })
+    vim.api.nvim_set_keymap("c", next_key, "", { callback = select_or_fallback(next_key, 1), noremap = true })
+    vim.api.nvim_set_keymap("c", previous_key, "", { callback = select_or_fallback(previous_key, -1), noremap = true })
     -- vim.api.nvim_create_user_command("WildResetHistory", function() cmd:resethistory() end, {desc = "Resets command history" })
 end
 
 local function disable_nvim_builtin_cmd_history()
-    vim.api.nvim_set_keymap('c', '<C-f>', '<Nop>', { noremap = true, silent = true })
-    vim.api.nvim_set_keymap('n', 'q:', '<Nop>', { noremap = true, silent = true })
-    vim.api.nvim_set_keymap('n', 'q/', '<Nop>', { noremap = true, silent = true })
-    vim.api.nvim_set_keymap('n', 'q?', '<Nop>', { noremap = true, silent = true })
+    vim.api.nvim_set_keymap("c", "<C-f>", "<Nop>", { noremap = true, silent = true })
+    vim.api.nvim_set_keymap("n", "q:", "<Nop>", { noremap = true, silent = true })
+    vim.api.nvim_set_keymap("n", "q/", "<Nop>", { noremap = true, silent = true })
+    vim.api.nvim_set_keymap("n", "q?", "<Nop>", { noremap = true, silent = true })
 end
 
 function M.setup(opts)

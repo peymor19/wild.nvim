@@ -5,7 +5,7 @@ local M = {}
 
 M.state = {
     current_buf_line = nil,
-    highlight_namespace = vim.api.nvim_create_namespace("Highlighter")
+    highlight_namespace = vim.api.nvim_create_namespace("Highlighter"),
 }
 
 local chars_ns_id = vim.api.nvim_create_namespace("wild_highlight_characters")
@@ -26,18 +26,20 @@ end
 local function get_row(height)
     local ui = vim.api.nvim_list_uis()[1]
 
-    if ui == nil then return 0 end
+    if ui == nil then
+        return 0
+    end
 
     return math.max(ui.height - height - 4, 0)
 end
 
 local function reset_window_height(win_id, buf_line_count)
-    local config = vim.api.nvim_win_get_config(win_id)
+    local win_config = vim.api.nvim_win_get_config(win_id)
 
-    config.height = get_height(buf_line_count)
-    config.row = get_row(config.height)
+    win_config.height = get_height(buf_line_count)
+    win_config.row = get_row(win_config.height)
 
-    vim.api.nvim_win_set_config(win_id, config)
+    vim.api.nvim_win_set_config(win_id, win_config)
 end
 
 function M.create_window(buf_line_count)
@@ -45,14 +47,14 @@ function M.create_window(buf_line_count)
 
     local buf_id = vim.api.nvim_create_buf(false, true)
     local win_id = vim.api.nvim_open_win(buf_id, false, {
-        relative = 'editor',
-        style = 'minimal',
+        relative = "editor",
+        style = "minimal",
         width = config.options.window.width,
         height = height,
         row = get_row(height),
         col = 0,
         border = config.options.window.border,
-        zindex = 250
+        zindex = 250,
     })
 
     vim.api.nvim_set_hl(0, "WildWindowBackground", config.options.window.background_hl)
@@ -98,14 +100,18 @@ function M.redraw()
 end
 
 function M.update_buffer_contents(win_id, buf_id, data)
-    if invalid_buffer(buf_id) then return end
+    if invalid_buffer(buf_id) then
+        return
+    end
 
     reset_window_height(win_id, #data)
 
-    local results = {"No Results"}
+    local results = { "No Results" }
 
     if #data ~= 0 then
-        results = vim.tbl_map(function(d) return d[1] end, data)
+        results = vim.tbl_map(function(d)
+            return d[1]
+        end, data)
     end
 
     vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, results)
@@ -116,7 +122,7 @@ function M.highlight_chars(buf_id, data)
     vim.api.nvim_set_hl(0, "highlight_charaters", {
         fg = config.options.highlights.character_color,
         bg = config.options.window.color,
-        bold = true
+        bold = true,
     })
 
     vim.api.nvim_buf_clear_namespace(buf_id, chars_ns_id, 0, -1)
@@ -129,7 +135,7 @@ function M.highlight_chars(buf_id, data)
                 virt_text = { { char, "highlight_charaters" } },
                 virt_text_pos = "overlay",
                 hl_mode = "combine",
-                priority = 99
+                priority = 99,
             })
         end
     end
@@ -142,7 +148,7 @@ function M.set_command_line(buf_id, line_number)
     vim.o.eventignore = "CmdlineChanged"
 
     if cmd.is_help(input) then
-        vim.fn.setcmdline("help ".. command)
+        vim.fn.setcmdline("help " .. command)
     else
         vim.fn.setcmdline(command)
     end
@@ -151,18 +157,16 @@ function M.set_command_line(buf_id, line_number)
 end
 
 function M.highlight_line(buf_id, line)
-    local line_content = vim.api.nvim_buf_get_lines(buf_id, line, line + 1, false)[1]
-
     vim.api.nvim_set_hl(0, "line_highlight", {
         fg = config.options.highlights.line_color,
         bg = config.options.window.color,
-        bold = true
+        bold = true,
     })
 
     vim.api.nvim_buf_set_extmark(buf_id, line_ns_id, line, 0, {
         hl_group = "line_highlight",
         end_row = line + 1,
-        priority = 100
+        priority = 100,
     })
 
     M.redraw()
@@ -183,10 +187,14 @@ end
 function M.select_command(win_id, buf_id, offset)
     local state = M.state
 
-    if not has_results(buf_id) then return end
+    if not has_results(buf_id) then
+        return
+    end
 
     local total_lines = vim.api.nvim_buf_line_count(buf_id)
-    if total_lines == 0 then return end
+    if total_lines == 0 then
+        return
+    end
 
     if state.current_buf_line == nil then
         state.current_buf_line = 0
@@ -195,7 +203,7 @@ function M.select_command(win_id, buf_id, offset)
         state.current_buf_line = (state.current_buf_line + delta) % total_lines
     end
 
-    vim.api.nvim_win_set_cursor(win_id, {state.current_buf_line + 1, 0})
+    vim.api.nvim_win_set_cursor(win_id, { state.current_buf_line + 1, 0 })
     M.highlight_line(buf_id, state.current_buf_line)
     M.set_command_line(buf_id, state.current_buf_line)
 end

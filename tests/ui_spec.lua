@@ -1,5 +1,5 @@
-local config = require "wild.config"
-local ui = require "wild.ui"
+local config = require("wild.config")
+local ui = require("wild.ui")
 
 describe("close_window", function()
     before_each(function()
@@ -27,9 +27,9 @@ end)
 
 describe("get_buf_data", function()
     it("should return the names for the given searchable type", function()
-        local searchables = { commands = {{cmd = "edit", count = 1}, {cmd = "echo", count = 0}} }
+        local searchables = { commands = { { cmd = "edit", count = 1 }, { cmd = "echo", count = 0 } } }
 
-        assert.are.same({"edit", "echo"}, ui.get_buf_data("commands", searchables))
+        assert.are.same({ "edit", "echo" }, ui.get_buf_data("commands", searchables))
     end)
 
     it("should return an empty list before searchables have loaded", function()
@@ -51,8 +51,8 @@ describe("update_buffer_contents", function()
     end)
 
     it("should only highlight matched characters of the current results", function()
-        ui.update_buffer_contents(win_id, buf_id, {{"edit", {1, 2}, 1}, {"echo", {1}, 1}})
-        ui.update_buffer_contents(win_id, buf_id, {{"edit", {1}, 1}})
+        ui.update_buffer_contents(win_id, buf_id, { { "edit", { 1, 2 }, 1 }, { "echo", { 1 }, 1 } })
+        ui.update_buffer_contents(win_id, buf_id, { { "edit", { 1 }, 1 } })
 
         local marks = vim.api.nvim_buf_get_extmarks(buf_id, chars_ns_id, 0, -1, {})
 
