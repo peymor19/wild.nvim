@@ -49,14 +49,14 @@ local function handle_cmdline_enter()
     -- `:w<CR>:echo<CR>`) can all run in the last one; replace, don't stack.
     ui.close_window(state.win_id, state.buf_id)
 
-    state.win_id, state.buf_id = ui.create_window(#buf_data)
+    state.win_id, state.buf_id = ui.create_window(buf_data)
     state.match_count = #buf_data
     state.matches = {}
     state.selected = nil
     state.prefix = ""
     state.candidates = {}
 
-    ui.set_buffer_contents(state.buf_id, buf_data)
+    ui.set_counter(state.win_id, nil, #buf_data)
     ui.redraw()
 end
 
@@ -98,6 +98,7 @@ local function handle_cmdline_changed()
     local matches = fzy.find_matches(needle, items)
 
     ui.update_buffer_contents(state.win_id, state.buf_id, matches)
+    ui.set_counter(state.win_id, nil, #matches)
     state.matches = matches
     ui.clear_selection(state.win_id)
     state.match_count = #matches
@@ -120,6 +121,7 @@ local function select(offset)
 
     ui.select_line(state.win_id, state.selected)
     ui.highlight_chars(state.win_id, state.buf_id, state.matches)
+    ui.set_counter(state.win_id, state.selected, state.match_count)
     ui.set_command_line(state.buf_id, state.selected, state.prefix)
     ui.redraw()
 end

@@ -90,11 +90,13 @@ Default configuration: >lua
     require("wild").setup({
         window = {
             width = 30,
+            max_width = 80,
             height = 10,
             border = "rounded",
             opacity = 0,
             background_hl = nil,
             border_hl = nil,
+            counter = true,
         },
         highlights = {
             line_color = "#FFA500",
@@ -110,7 +112,10 @@ Default configuration: >lua
 
                                                           *wild-config-window*
 window.width ~
-    Width of the popup in columns.
+    Width of the popup in columns, or "auto" to fit the longest match.
+
+window.max_width ~
+    Largest width when `window.width` is "auto".
 
 window.height ~
     Maximum number of rows shown. The popup shrinks to fit fewer matches.
@@ -129,6 +134,10 @@ window.background_hl ~
 window.border_hl ~
     Highlight attributes for |hl-WildBorder|, as accepted by |nvim_set_hl()|.
     When unset, the border links to |hl-FloatBorder|.
+
+window.counter ~
+    Show the number of matches in the bottom border, and the position of the
+    selected match once you select one, such as `3/28`. Needs a border.
 
                                                       *wild-config-highlights*
 highlights.line_color ~
@@ -167,7 +176,8 @@ restored after you change colorscheme.
 WildNormal          Popup background. Links to |hl-Normal|.
 
                                                               *hl-WildBorder*
-WildBorder          Popup border. Links to |hl-FloatBorder|.
+WildBorder          Popup border and match counter. Links to
+                    |hl-FloatBorder|.
 
                                                                *hl-WildMatch*
 WildMatch           Characters that match what you typed.

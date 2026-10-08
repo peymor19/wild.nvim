@@ -28,6 +28,12 @@ describe("config.setup", function()
         assert.matches("window.width", err)
     end)
 
+    it("should accept an auto width", function()
+        config.setup({ window = { width = "auto" } })
+
+        assert.is_equal("auto", config.options.window.width)
+    end)
+
     it("should error when a section is not a table", function()
         local ok, err = pcall(config.setup, { keymaps = "<Tab>" })
 

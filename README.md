@@ -15,6 +15,7 @@ Press `:` and a popup lists the command lines you run most, followed by every ot
 - Fuzzy argument completion for any command Neovim can complete (`:e`, `:set`, `:colorscheme`, `:h`, `:lua`, ...)
 - Arguments you used before come first
 - `<Tab>` and `<S-Tab>` work as usual in `/`, `?` and `input()` prompts
+- Auto width and a match counter
 - Highlight groups that follow your colorscheme
 - `:checkhealth wild`
 
@@ -44,12 +45,14 @@ With [lazy.nvim](https://github.com/folke/lazy.nvim):
 ```lua
 require("wild").setup({
     window = {
-        width = 30,
+        width = 30, -- a number, or "auto" to fit the longest match
+        max_width = 80, -- largest width when width is "auto"
         height = 10,
         border = "rounded", -- any border accepted by nvim_open_win()
         opacity = 0, -- 0 (opaque) to 100
         background_hl = nil, -- e.g. { bg = "#1e1e2e" }, defaults to a link to Normal
         border_hl = nil, -- e.g. { fg = "#89b4fa" }, defaults to a link to FloatBorder
+        counter = true, -- show "3/28" in the bottom border
     },
     highlights = {
         line_color = "#FFA500", -- selected line
@@ -70,7 +73,7 @@ See `:h wild-config` for details on every option.
 | Group           | Used for                  | Default                 |
 | --------------- | ------------------------- | ----------------------- |
 | `WildNormal`    | Popup background          | links to `Normal`       |
-| `WildBorder`    | Popup border              | links to `FloatBorder`  |
+| `WildBorder`    | Popup border and counter  | links to `FloatBorder`  |
 | `WildMatch`     | Characters matching input | `character_color`, bold |
 | `WildSelection` | Selected line             | `line_color`, bold      |
 

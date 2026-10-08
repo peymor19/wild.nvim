@@ -12,47 +12,70 @@ local function invalid_buffer(buf_id)
     end
 end
 
-local function get_height(buf_line_count)
-    return math.max(math.min(buf_line_count, config.options.window.height), 1)
-end
+local function border_size()
+    local border = config.options.window.border
 
-local function get_row(height)
-    local ui = vim.api.nvim_list_uis()[1]
-
-    if ui == nil then
+    if border == "none" or (type(border) == "table" and #border == 0) then
         return 0
     end
 
-    return math.max(ui.height - height - 4, 0)
+    return 2
 end
 
-local function reset_window_height(win_id, buf_line_count)
-    local win_config = vim.api.nvim_win_get_config(win_id)
+local function counter_text(selected, total)
+    if selected then
+        return string.format(" %d/%d ", selected + 1, total)
+    end
 
-    win_config.height = get_height(buf_line_count)
-    win_config.row = get_row(win_config.height)
-
-    vim.api.nvim_win_set_config(win_id, win_config)
+    return string.format(" %d ", total)
 end
 
-function M.create_window(buf_line_count)
-    local height = get_height(buf_line_count)
+function M.get_layout(lines)
+    local window = config.options.window
+    local border = border_size()
+    local height = math.max(math.min(#lines, window.height), 1)
+    local width = window.width
 
+    if width == "auto" then
+        width = 1
+
+        for _, line in ipairs(lines) do
+            width = math.max(width, vim.api.nvim_strwidth(line))
+        end
+
+        if window.counter then
+            width = math.max(width, #counter_text(#lines - 1, #lines))
+        end
+
+        width = math.min(width, window.max_width)
+    end
+
+    width = math.max(math.min(width, vim.o.columns - border), 1)
+
+    local row = vim.o.lines - height - border - vim.o.cmdheight - 1
+
+    return { relative = "editor", width = width, height = height, row = math.max(row, 0), col = 0 }
+end
+
+local function apply_layout(win_id, buf_id)
+    local lines = vim.api.nvim_buf_get_lines(buf_id, 0, -1, false)
+    vim.api.nvim_win_set_config(win_id, M.get_layout(lines))
+end
+
+function M.create_window(lines)
     local buf_id = vim.api.nvim_create_buf(false, true)
-    local win_id = vim.api.nvim_open_win(buf_id, false, {
-        relative = "editor",
-        style = "minimal",
-        width = config.options.window.width,
-        height = height,
-        row = get_row(height),
-        col = 0,
-        border = config.options.window.border,
-        zindex = 250,
-    })
+    vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
+
+    local win_config = M.get_layout(lines)
+    win_config.style = "minimal"
+    win_config.border = config.options.window.border
+    win_config.zindex = 250
+
+    local win_id = vim.api.nvim_open_win(buf_id, false, win_config)
 
     vim.api.nvim_set_option_value(
         "winhighlight",
-        "Normal:WildNormal,FloatBorder:WildBorder,CursorLine:WildSelection",
+        "Normal:WildNormal,FloatBorder:WildBorder,FloatFooter:WildBorder,CursorLine:WildSelection",
         { win = win_id }
     )
     vim.api.nvim_set_option_value("winblend", config.options.window.opacity, { win = win_id, scope = "local" })
@@ -60,8 +83,12 @@ function M.create_window(buf_line_count)
     return win_id, buf_id
 end
 
-function M.set_buffer_contents(buf_id, buf_data)
-    vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, buf_data)
+function M.set_counter(win_id, selected, total)
+    if not config.options.window.counter or not vim.api.nvim_win_is_valid(win_id) then
+        return
+    end
+
+    vim.api.nvim_win_set_config(win_id, { footer = counter_text(selected, total), footer_pos = "right" })
 end
 
 function M.close_window(win_id, buf_id)
@@ -76,8 +103,7 @@ end
 
 function M.resize_window(win_id, buf_id)
     if win_id and vim.api.nvim_win_is_valid(win_id) then
-        local buf_line_count = vim.api.nvim_buf_line_count(buf_id)
-        reset_window_height(win_id, buf_line_count)
+        apply_layout(win_id, buf_id)
     end
 end
 
@@ -90,8 +116,6 @@ function M.update_buffer_contents(win_id, buf_id, data)
         return
     end
 
-    reset_window_height(win_id, #data)
-
     local results = { "No Results" }
 
     if #data ~= 0 then
@@ -101,6 +125,7 @@ function M.update_buffer_contents(win_id, buf_id, data)
     end
 
     vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, results)
+    apply_layout(win_id, buf_id)
     vim.api.nvim_win_set_cursor(win_id, { 1, 0 })
     M.highlight_chars(win_id, buf_id, data)
 end
