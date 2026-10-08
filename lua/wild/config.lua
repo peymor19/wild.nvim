@@ -1,5 +1,28 @@
+---@class wild.WindowConfig
+---@field width? integer Popup width in columns
+---@field height? integer Maximum number of visible rows
+---@field border? any[]|"none"|"single"|"double"|"rounded"|"solid"|"shadow"
+---@field opacity? integer Transparency from 0 (opaque) to 100, see 'winblend'
+---@field background_hl? vim.api.keyset.highlight Overrides the WildNormal group
+---@field border_hl? vim.api.keyset.highlight Overrides the WildBorder group
+
+---@class wild.HighlightsConfig
+---@field line_color? string Color of the selected line (WildSelection)
+---@field character_color? string Color of matched characters (WildMatch)
+
+---@class wild.KeymapsConfig
+---@field next_key? string Selects the next match
+---@field previous_key? string Selects the previous match
+
+---@class wild.Config
+---@field window? wild.WindowConfig
+---@field highlights? wild.HighlightsConfig
+---@field keymaps? wild.KeymapsConfig
+---@field disable_cmdwin? boolean Disable q:, q/, q? and <C-f>
+
 local M = {}
 
+---@type wild.Config
 M.defaults = {
     window = {
         width = 30,
@@ -20,14 +43,18 @@ M.defaults = {
     disable_cmdwin = true,
 }
 
+---@type wild.Config
 M.options = {}
 
+---@param options wild.Config
 function M.validate(options)
     vim.validate("window", options.window, "table")
     vim.validate("highlights", options.highlights, "table")
     vim.validate("keymaps", options.keymaps, "table")
 
-    local window, highlights, keymaps = options.window, options.highlights, options.keymaps
+    local window = options.window --[[@as wild.WindowConfig]]
+    local highlights = options.highlights --[[@as wild.HighlightsConfig]]
+    local keymaps = options.keymaps --[[@as wild.KeymapsConfig]]
 
     vim.validate("window.width", window.width, "number")
     vim.validate("window.height", window.height, "number")
@@ -42,6 +69,7 @@ function M.validate(options)
     vim.validate("disable_cmdwin", options.disable_cmdwin, "boolean")
 end
 
+---@param options? wild.Config
 function M.setup(options)
     M.options = vim.tbl_deep_extend("force", {}, M.defaults, options or {})
     M.validate(M.options)
