@@ -16,11 +16,11 @@ describe("highlights.setup", function()
         end
     end)
 
-    it("links the window groups to Normal and FloatBorder by default", function()
+    it("links the window groups to NormalFloat and FloatBorder by default", function()
         config.setup()
         highlights.setup()
 
-        assert.are.equal("Normal", get_hl("WildNormal").link)
+        assert.are.equal("NormalFloat", get_hl("WildNormal").link)
         assert.are.equal("FloatBorder", get_hl("WildBorder").link)
     end)
 
@@ -58,7 +58,7 @@ describe("highlights.setup", function()
         vim.cmd("highlight clear")
         highlights.setup()
 
-        assert.are.equal("Normal", get_hl("WildNormal").link)
+        assert.are.equal("NormalFloat", get_hl("WildNormal").link)
         assert.is_not_nil(get_hl("WildMatch").fg)
     end)
 end)

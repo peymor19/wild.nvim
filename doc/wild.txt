@@ -137,7 +137,7 @@ window.opacity ~
 
 window.background_hl ~
     Highlight attributes for |hl-WildNormal|, as accepted by |nvim_set_hl()|.
-    When unset, the popup background links to |hl-Normal|.
+    When unset, the popup background links to |hl-NormalFloat|.
 
 window.border_hl ~
     Highlight attributes for |hl-WildBorder|, as accepted by |nvim_set_hl()|.
@@ -186,7 +186,7 @@ colorscheme or your own |nvim_set_hl()| call takes precedence, and they are
 restored after you change colorscheme.
 
                                                               *hl-WildNormal*
-WildNormal          Popup background. Links to |hl-Normal|.
+WildNormal          Popup background. Links to |hl-NormalFloat|.
 
                                                               *hl-WildBorder*
 WildBorder          Popup border and match counter. Links to

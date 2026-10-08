@@ -51,7 +51,7 @@ require("wild").setup({
         height = 10,
         border = "rounded", -- any border accepted by nvim_open_win()
         opacity = 0, -- 0 (opaque) to 100
-        background_hl = nil, -- e.g. { bg = "#1e1e2e" }, defaults to a link to Normal
+        background_hl = nil, -- e.g. { bg = "#1e1e2e" }, defaults to a link to NormalFloat
         border_hl = nil, -- e.g. { fg = "#89b4fa" }, defaults to a link to FloatBorder
         counter = true, -- show "3/28" in the bottom border
     },
@@ -74,7 +74,7 @@ See `:h wild-config` for details on every option.
 
 | Group           | Used for                  | Default                 |
 | --------------- | ------------------------- | ----------------------- |
-| `WildNormal`    | Popup background          | links to `Normal`       |
+| `WildNormal`    | Popup background          | links to `NormalFloat`  |
 | `WildBorder`    | Popup border and counter  | links to `FloatBorder`  |
 | `WildMatch`     | Characters matching input | `character_color`, bold |
 | `WildSelection` | Selected line             | `line_color`, bold      |
