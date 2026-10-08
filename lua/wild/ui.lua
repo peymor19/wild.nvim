@@ -101,14 +101,27 @@ function M.update_buffer_contents(win_id, buf_id, data)
     end
 
     vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, results)
-    M.highlight_chars(buf_id, data)
+    vim.api.nvim_win_set_cursor(win_id, { 1, 0 })
+    M.highlight_chars(win_id, buf_id, data)
 end
 
-function M.highlight_chars(buf_id, data)
+local function visible_range(win_id)
+    return unpack(vim.api.nvim_win_call(win_id, function()
+        return { vim.fn.line("w0"), vim.fn.line("w$") }
+    end))
+end
+
+function M.highlight_chars(win_id, buf_id, data)
     vim.api.nvim_buf_clear_namespace(buf_id, chars_ns_id, 0, -1)
 
-    for line_idx, item in ipairs(data) do
-        local str, positions = item[1], item[2]
+    if not vim.api.nvim_win_is_valid(win_id) then
+        return
+    end
+
+    local first, last = visible_range(win_id)
+
+    for line_idx = first, math.min(last, #data) do
+        local str, positions = data[line_idx][1], data[line_idx][2]
         for _, pos in ipairs(positions) do
             local char = str:sub(pos, pos)
             vim.api.nvim_buf_set_extmark(buf_id, chars_ns_id, line_idx - 1, pos - 1, {

@@ -15,6 +15,7 @@ local state = {
     help_tags = nil,
     candidates = {},
     match_count = 0,
+    matches = {},
     selected = nil,
     prefix = "",
 }
@@ -50,6 +51,7 @@ local function handle_cmdline_enter()
 
     state.win_id, state.buf_id = ui.create_window(#buf_data)
     state.match_count = #buf_data
+    state.matches = {}
     state.selected = nil
     state.prefix = ""
     state.candidates = {}
@@ -72,6 +74,7 @@ local function handle_cmdline_leave()
 
     ui.close_window(state.win_id, state.buf_id)
     state.match_count = 0
+    state.matches = {}
     state.selected = nil
 end
 
@@ -95,6 +98,7 @@ local function handle_cmdline_changed()
     local matches = fzy.find_matches(needle, items)
 
     ui.update_buffer_contents(state.win_id, state.buf_id, matches)
+    state.matches = matches
     ui.clear_selection(state.win_id)
     state.match_count = #matches
     state.selected = nil
@@ -115,6 +119,7 @@ local function select(offset)
     end
 
     ui.select_line(state.win_id, state.selected)
+    ui.highlight_chars(state.win_id, state.buf_id, state.matches)
     ui.set_command_line(state.buf_id, state.selected, state.prefix)
     ui.redraw()
 end
@@ -159,11 +164,12 @@ local function setup_global_autocmd()
         group = group,
     })
 
+    local changed_timer = vim.uv.new_timer()
+
     autocmd("CmdlineChanged", {
         callback = function()
-            vim.defer_fn(function()
-                handle_cmdline_changed()
-            end, 10)
+            changed_timer:stop()
+            changed_timer:start(10, 0, vim.schedule_wrap(handle_cmdline_changed))
         end,
         group = group,
     })

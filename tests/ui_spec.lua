@@ -46,6 +46,56 @@ describe("update_buffer_contents", function()
 
         assert.is_equal(1, #marks)
     end)
+
+    describe("with more results than fit in the window", function()
+        local data = {}
+        for i = 1, 50 do
+            data[i] = { "item" .. i, { 1 }, 1 }
+        end
+
+        local function marked_rows()
+            return vim.tbl_map(function(mark)
+                return mark[2]
+            end, vim.api.nvim_buf_get_extmarks(buf_id, chars_ns_id, 0, -1, {}))
+        end
+
+        local function top_row()
+            return vim.api.nvim_win_call(win_id, function()
+                return vim.fn.line("w0")
+            end)
+        end
+
+        before_each(function()
+            ui.close_window(win_id, buf_id)
+            config.setup({ window = { height = 10 } })
+            win_id, buf_id = ui.create_window(#data)
+        end)
+
+        it("should only highlight the visible rows", function()
+            ui.update_buffer_contents(win_id, buf_id, data)
+
+            assert.are.same({ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }, marked_rows())
+        end)
+
+        it("should highlight the rows scrolled into view", function()
+            ui.update_buffer_contents(win_id, buf_id, data)
+            ui.select_line(win_id, 39)
+            ui.highlight_chars(win_id, buf_id, data)
+
+            local rows = marked_rows()
+            assert.is_equal(10, #rows)
+            assert.is_equal(top_row() - 1, rows[1])
+            assert.is_true(vim.tbl_contains(rows, 39))
+        end)
+
+        it("should scroll back to the top when the results change", function()
+            ui.update_buffer_contents(win_id, buf_id, data)
+            ui.select_line(win_id, 39)
+            ui.update_buffer_contents(win_id, buf_id, data)
+
+            assert.is_equal(1, top_row())
+        end)
+    end)
 end)
 
 describe("selection", function()
