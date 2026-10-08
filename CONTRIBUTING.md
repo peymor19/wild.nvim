@@ -8,11 +8,13 @@ You need:
 
 - Neovim 0.12 or newer
 - [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) cloned next to this repo (or set `PLENARY_DIR`)
+- [fzy-lua-native](https://github.com/romgrk/fzy-lua-native) cloned next to this repo (or set `FZY_DIR`)
 - [StyLua](https://github.com/JohnnyMorganz/StyLua)
 - [luacheck](https://github.com/lunarmodules/luacheck)
 
 ```sh
 git clone https://github.com/nvim-lua/plenary.nvim ../plenary.nvim
+git clone https://github.com/romgrk/fzy-lua-native ../fzy-lua-native
 ```
 
 ## Running checks
@@ -25,11 +27,13 @@ git clone https://github.com/nvim-lua/plenary.nvim ../plenary.nvim
 | `make format-check` | Check formatting without changing |
 | `make check`        | Lint, format check and tests      |
 
-Use a different plenary checkout with:
+Use other checkouts, such as the ones your plugin manager installed, with:
 
 ```sh
-make test PLENARY_DIR=/path/to/plenary.nvim
+make test PLENARY_DIR=/path/to/plenary.nvim FZY_DIR=/path/to/fzy-lua-native
 ```
+
+`tests/integration_spec.lua` starts a separate Neovim for each test, types into it like a user would, and checks the popup and command line.
 
 CI runs the same checks against Neovim stable and nightly, so run `make check` before opening a pull request.
 
